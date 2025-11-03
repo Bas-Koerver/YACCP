@@ -12,15 +12,17 @@ endif ()
 
 find_package(pylon REQUIRED)
 find_package(MetavisionSDK COMPONENTS core stream ui REQUIRED)
+find_package(CLI11 REQUIRED)
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-add_executable(stereo-camera-calibration calibration.cpp)
+add_executable(create-charuco-board create_charuco_board.cpp)
 add_executable(prophesee-dvs-recorder prophesee_dvs_recorder.cpp)
 
-target_link_libraries(stereo-camera-calibration
+target_link_libraries(create-charuco-board PRIVATE
         ${OpenCV_LIBS}
         pylon::pylon
+        CLI11::CLI11
 )
 
 target_link_libraries(prophesee-dvs-recorder
