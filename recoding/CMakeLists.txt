@@ -1,17 +1,23 @@
+cmake_minimum_required(VERSION 3.23...3.27)
+project(stereo-camera-calibration
+LANGUAGES CXX
+VERSION 0.1)
+
+set(CMAKE_CXX_STANDARD 23)
+
 find_package(MetavisionSDK COMPONENTS core stream ui REQUIRED)
 
+find_package(CLI11 REQUIRED)
+
+find_package(OpenCV REQUIRED)
+
+find_package(Boost COMPONENTS program_options REQUIRED)
+add_compile_definitions(BOOST_BIND_GLOBAL_PLACEHOLDERS) ## needed to get rid of warning `#pragma message: The practice of declaring the Bind placeholders (_1, _2, ...)`
+
 add_executable(prophesee-dvs-recorder prophesee_dvs_recorder.cpp)
-
 target_link_libraries(prophesee-dvs-recorder PRIVATE
-        MetavisionSDK::core MetavisionSDK::stream MetavisionSDK::ui)
+        MetavisionSDK::core MetavisionSDK::stream MetavisionSDK::ui
+        ${OpenCV_LIBS})
 
-set_target_properties(prophesee-dvs-recorder PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/run-mv")
-
-# copy only Metavision DLLs
-set(MV "C:/Program Files/Prophesee")
-
-add_custom_command(TARGET prophesee-dvs-recorder POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${MV}/bin" "$<TARGET_FILE_DIR:prophesee-dvs-recorder>"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${MV}/third_party/$<IF:$<CONFIG:Debug>,debug/,>bin" "$<TARGET_FILE_DIR:prophesee-dvs-recorder>")
+add_executable(metavision-viewer metavision_viewer.cpp)
+target_link_libraries(metavision-viewer PRIVATE MetavisionSDK::stream MetavisionSDK::core MetavisionSDK::ui Boost::program_options ${OpenCV_LIBS})
