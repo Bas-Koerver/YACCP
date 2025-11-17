@@ -3,7 +3,7 @@
 ####################################################################################################################
 
 version: "1.0"
-linter: JetBrains/qodana-action@27de2a744479d1d731934eeaf79287575ebc5dd3
+linter: qodana-clang
 profile:
   name: qodana.recommended
 include:
