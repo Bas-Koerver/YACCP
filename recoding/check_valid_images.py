@@ -107,9 +107,10 @@ def frame_at_nth_trigger(
 
 
 if __name__ == "__main__":
-    path = "C:/Users/Bas_K/source/repos/Thesis/stereo-camera-calibration/recoding/cmake-build-release-visual-studio/data/eventfile/raw_recording_2025-11-21_08-13-23.hdf5"
+    path = "C:/Users/Bas_K/source/repos/Thesis/stereo-camera-calibration/recoding/cmake-build-release-visual-studio/data/eventfile/output.hdf5"
     data_dir = "C:/Users/Bas_K/source/repos/Thesis/stereo-camera-calibration/recoding/cmake-build-release-visual-studio/data/"
     exposure_us = 33333
+    frame_number = 12
 
     rgb_images = glob.glob(data_dir + "/images/basler_rgb/" + "*.png")
     for rgb_image in rgb_images:
@@ -118,17 +119,17 @@ if __name__ == "__main__":
             path,
             frame_number,
             exposure_us,
-            only_on=False,
+            width=1280,
+            height=720,
+            only_on=True,
         )
 
+        print("Trigger timestamp:", t_ref)
+        print("CD events in window:", len(cd_events["t"]))
+        print("Frame shape:", frame.shape)
 
-
-    print("Trigger timestamp:", t_ref)
-    print("CD events in window:", len(cd_events["t"]))
-    print("Frame shape:", frame.shape)
-
-    # Quick visualization with OpenCV
-    vis = frame.astype(np.float32)
-    vis /= (vis.max() + 1e-9)
-    vis = (vis * 255).astype(np.uint8)
-    cv2.imwrite("event_frame.png", vis)
+        # Quick visualization with OpenCV
+        vis = frame.astype(np.float32)
+        vis /= (vis.max() + 1e-9)
+        vis = (vis * 255).astype(np.uint8)
+        cv2.imwrite(f"{data_dir}/images/prophesee_dvs/frame_{frame_number}.png", vis)
