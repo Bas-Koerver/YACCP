@@ -9,13 +9,17 @@
 
 #include <pylon/PylonIncludes.h>
 
-#include "../utility.hpp"
+#include "../Utility.hpp"
+#include "../detection_validator.hpp"
 
 
 class FrameHandler : public Pylon::CImageEventHandler {
 public:
-    FrameHandler(std::mutex &m, cv::Mat &f, int &id, GenApi::INodeMap &np) : frame_mutex_{m}, frame_{f}, id_{id},
-                                                                             nodeMap_{np} {
+    FrameHandler(std::mutex &m, cv::Mat &f, int &index, GenApi::INodeMap &np)
+        : frame_mutex_{m},
+          frame_{f},
+          id_{index},
+          nodeMap_{np} {
     }
 
     void OnImageGrabbed(Pylon::CInstantCamera &cam, const Pylon::CGrabResultPtr &ptrGrabResult) override {
@@ -25,21 +29,19 @@ public:
 
         const int height{static_cast<int>(ptrGrabResult->GetHeight())};
         const int width{static_cast<int>(ptrGrabResult->GetWidth())};
+        cv::Mat tempFrameBGR;
+        int tempIndex{};
 
         //BayerRG8 (RGGB)
         cv::Mat tempFrame(height, width, CV_8UC1, ptrGrabResult->GetBuffer());
-        cv::Mat tempFrameBGR;
-        // TODO: Change to COLOR_BayerRGGB2BGR
-        cv::cvtColor(tempFrame, tempFrame, cv::COLOR_BayerRGGB2BGR);
-        int tempID{};
+        cv::cvtColor(tempFrame, tempFrameBGR, cv::COLOR_BayerRGGB2BGR);
 
-        // cv::Mat tempFrame(height, width, CV_8UC3, ptrGrabResult->GetBuffer());
-        tempID = Pylon::CIntegerParameter(nodeMap_, "CounterValue").GetValue();
+        tempIndex = Pylon::CIntegerParameter(nodeMap_, "CounterValue").GetValue();
 
         {
             std::lock_guard<std::mutex> lock{frame_mutex_};
-            tempFrame.copyTo(frame_);
-            id_ = tempID;
+            tempFrameBGR.copyTo(frame_);
+            id_ = tempIndex;
         }
     }
 
@@ -54,7 +56,7 @@ namespace YACCP {
     void BaslerRGBWorker::setPixelFormat(GenApi::INodeMap &nodeMap) {
         // Configure pixel format and exposure time (FPS).
         // TEST: Change back to BayerRG8
-        // Pylon::CEnumParameter(nodeMap, "PixelFormat").SetValue("BGR8");
+        Pylon::CEnumParameter(nodeMap, "PixelFormat").SetValue("BayerRG8");
         Pylon::CFloatParameter(nodeMap, "ExposureTime").SetValue((1.0 / static_cast<double>(fps_)) * 1e6);
     }
 
@@ -92,18 +94,18 @@ namespace YACCP {
 
     std::tuple<int, int> BaslerRGBWorker::getSetNodeMapParameters(GenApi::INodeMap &nodeMap) {
         setPixelFormat(nodeMap);
-        setGainControl(nodeMap);
+        // setGainControl(nodeMap);
         setTimingInterfaces(nodeMap);
         setCounters(nodeMap);
         return getDims(nodeMap);
     }
 
     BaslerRGBWorker::BaslerRGBWorker(std::stop_source stopSource,
-                                     CamData &camData,
+                                     std::vector<YACCP::CamData> &camDatas,
                                      const int fps,
                                      const int id,
-                                     std::string camId) : CameraWorker(stopSource, camData,
-                                                                       fps, id, std::move(camId)) {
+                                     std::string camId)
+        : CameraWorker(stopSource, camDatas, fps, id, std::move(camId)) {
         Pylon::PylonInitialize();
     }
 
@@ -136,7 +138,7 @@ namespace YACCP {
     // }
 
     void BaslerRGBWorker::start() {
-        (void) utility::createDirs("./data/images/basler_rgb/");
+        (void) Utility::createDirs("./data/images/basler_rgb/");
         Pylon::CInstantCamera cam;
 
         try {
@@ -185,41 +187,64 @@ namespace YACCP {
 
             std::mutex frameMutex;
             cv::Mat frame;
-            int frameID;
+            int frameIndex;
 
-            FrameHandler frameHandler{frameMutex, frame, frameID, nodeMap};
+            FrameHandler frameHandler{frameMutex, frame, frameIndex, nodeMap};
             cam.RegisterImageEventHandler(&frameHandler, Pylon::RegistrationMode_Append,
                                           Pylon::Cleanup_None);
 
             cam.StartGrabbing(Pylon::GrabStrategy_LatestImageOnly, Pylon::GrabLoop_ProvidedByInstantCamera);
 
-            Pylon::CGrabResultPtr ptrGrabResult;
+            // Pylon::CGrabResultPtr ptrGrabResult;
 
             camData_.isRunning = cam.IsGrabbing();
-            while (cam.IsGrabbing() && !stopSource_.stop_requested()) {
-                cv::Mat localFrame;
-                int localFrameID;
-                {
-                    std::unique_lock<std::mutex> lock{frameMutex};
-                    if (frame.empty()) {
+
+            if (camData_.isMaster) {
+
+                requestedFrame_ = 1 + fps_ * detectionInterval_;
+                for (auto &camData: camDatas_) {
+                    if (camData.isMaster) {
                         continue;
                     }
-                    localFrame = frame.clone();
-                    localFrameID = frameID;
-                }
-                // Frame used for visualisation
-                {
-                    std::unique_lock<std::mutex> lock{camData_.m};
-                    camData_.frame = localFrame.clone();
+                    camData.frameRequestQ.enqueue(requestedFrame_);
                 }
 
-                // Frame used for verification
-                // TODO: Maybe run after every x frames instead of seconds.
-                // std::chrono::duration<double> seconds{std::chrono::system_clock::now() - startTime};
-                // if (charucoCorners.size() > 3 && seconds.count() > 2.0) {
-                //
-                //     startTime = std::chrono::system_clock::now();
-                // }
+                while (cam.IsGrabbing() && !stopToken_.stop_requested()) {
+                    cv::Mat localFrame;
+                    int localFrameIndex;
+                    {
+                        std::unique_lock<std::mutex> lock{frameMutex};
+                        if (frame.empty()) {
+                            continue;
+                        }
+                        localFrame = frame.clone();
+                        localFrameIndex = frameIndex;
+                    }
+                    // Frame used for visualisation
+                    {
+                        std::unique_lock<std::mutex> lock{camData_.m};
+                        camData_.frame = localFrame.clone();
+                    }
+
+                    if (localFrameIndex >= requestedFrame_) {
+                        VerifyTask frameData;
+                        frameData.id = requestedFrame_;
+                        frameData.frame = localFrame.clone();
+                        camData_.frameVerifyQ.enqueue(frameData);
+
+                        requestedFrame_ = localFrameIndex + fps_ * detectionInterval_;
+                        // lastRequestedFrame = requestedFrame_;
+
+                        for (auto &camData: camDatas_) {
+                            if (camData.isMaster) {
+                                continue;
+                            }
+                            camData.frameRequestQ.enqueue(requestedFrame_);
+                        }
+                    }
+                }
+            } else {
+                throw std::logic_error("Function not yet implemented");
             }
 
             cam.StopGrabbing();

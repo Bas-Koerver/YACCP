@@ -36,7 +36,7 @@ add_executable(
         recorders/basler_rgb_recorder.cpp recorders/basler_rgb_recorder.hpp
         utility.cpp utility.hpp
         videoViewer.cpp VideoViewer.hpp
-        #        detection_validator.cpp                 detection_validator.h
+        detection_validator.cpp detection_validator.hpp
 )
 
 target_link_libraries(
@@ -48,35 +48,4 @@ target_link_libraries(
         PUBLIC
         readerwriterqueue
 )
-
-#add_executable(
-#        basler-rgb-recorder
-#        basler_rgb_recorder.cpp
-#        utility.cpp utility.h
-#)
-
-#add_executable(
-#        metavision-filtering
-#        metavision_filtering.cpp
-#)
-
-#add_executable(
-#        check-valid-images
-#        check_valid_images.cpp
-#)
-
-#target_link_libraries(basler-rgb-recorder PRIVATE
-#        ${OpenCV_LIBS}
-#        pylon::pylon
-#)
-#
-#target_link_libraries(metavision-filtering PRIVATE
-#        MetavisionSDK::core MetavisionSDK::stream MetavisionSDK::ui
-#        Boost::program_options
-#)
-
-#target_link_libraries(check-valid-images PRIVATE
-#        ${OpenCV_LIBS}
-#        MetavisionSDK::core MetavisionSDK::stream MetavisionSDK::ui
-#)
 

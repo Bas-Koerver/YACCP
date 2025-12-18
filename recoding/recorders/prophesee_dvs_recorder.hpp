@@ -7,10 +7,11 @@ namespace YACCP {
     class PropheseeDVSWorker : public CameraWorker {
     public:
         PropheseeDVSWorker(std::stop_source stopSource,
-                           CamData &camData,
+                           std::vector<YACCP::CamData> &camDatas,
                            int fps,
                            int id,
                            int accumulation_time,
+                           int fallingEdgePolarity,
                            std::string camId = {});
 
         void listAvailableSources() override;
@@ -19,6 +20,9 @@ namespace YACCP {
 
     private:
         const std::uint16_t accumulationTime_;
+        int requestedFrame_{-1};
+        int frameIndex_{};
+        int fallingEdgePolarity_{};
     };
 }
 #endif //STEREO_CAMERA_CALIBRATION_PROPHESEE_DVS_RECORDER_H

@@ -9,15 +9,17 @@
 
 namespace YACCP {
     CameraWorker::CameraWorker(std::stop_source stopSource,
-                               CamData &camData,
+                               std::vector<YACCP::CamData> &camDatas,
                                int fps,
                                int id,
-                               std::string camId) : stopSource_(stopSource),
-                                                    camData_(camData),
-                                                    fps_(fps),
-                                                    id_(id),
-                                                    camId_(std::move(camId)) {
-        stopToken_ = stopSource_.get_token();
+                               std::string camId)
+        : stopSource_(stopSource),
+          stopToken_(stopSource.get_token()),
+          camDatas_(camDatas),
+          camData_(camDatas.at(id)),
+          fps_(fps),
+          id_(id),
+          camId_(std::move(camId)) {
     }
 
     void CameraWorker::listAvailableSources() {

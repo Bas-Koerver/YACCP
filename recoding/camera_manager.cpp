@@ -1,6 +1,7 @@
 #include <map>
 
-#include "utility.hpp"
+#include "detection_validator.hpp"
+#include "Utility.hpp"
 #include "VideoViewer.hpp"
 
 #include "recorders/basler_rgb_recorder.hpp"
@@ -19,29 +20,32 @@ int getWorstStopCode(const std::vector<YACCP::CamData> &camDatas) {
 }
 
 int main() {
-    (void) YACCP::utility::createDirs("./data/images/");
+    (void) YACCP::Utility::createDirs("./data/images/");
     std::map<std::string, YACCP::WorkerTypes>{
-        {"PropheseeDVS", YACCP::WorkerTypes::propheseeDVS},
-        {"BaslerRGB", YACCP::WorkerTypes::baslerRGB},
+        {"PropheseeDVS", YACCP::WorkerTypes::propheseeDvsEvk4},
+        {"BaslerRGB", YACCP::WorkerTypes::baslerRgb},
     };
 
     // TODO: Add config / CLI
-    std::vector<YACCP::WorkerTypes> slaveWorkers{YACCP::WorkerTypes::propheseeDVS};
-    YACCP::WorkerTypes masterWorker{YACCP::WorkerTypes::baslerRGB};
-    int squaresX{7};
-    int squaresY{5};
+    std::vector<YACCP::WorkerTypes> slaveWorkers;
+    YACCP::WorkerTypes masterWorker;
+    // slaveWorkers = {YACCP::WorkerTypes::propheseeDvsEvk4};
+    masterWorker = YACCP::WorkerTypes::baslerRgb;
+    auto squaresX{7};
+    auto squaresY{5};
     float squareLength{0.0295};
     float markerLength{0.0206};
-    bool refine{false};
-    int fps{30};
-    int acc{33333};
-    int viewsHorizontal{3};
-    std::stop_source stopSource;
-    std::vector<std::unique_ptr<YACCP::CameraWorker> > cameraWorkers;
+    auto refine{false};
+    auto fps{30};
+    auto acc{33333};
+    auto viewsHorizontal{3};
 
-    int numCams{static_cast<int>(slaveWorkers.size() + 1)};
+    std::stop_source stopSource;
+    auto numCams{static_cast<int>(slaveWorkers.size() + 1)};
     std::vector<YACCP::CamData> camDatas(numCams);
     std::vector<std::jthread> threads;
+    std::vector<std::unique_ptr<YACCP::CameraWorker> > cameraWorkers;
+    moodycamel::ReaderWriterQueue<YACCP::BoundingBoxData> boundingBoxQ{100};
     cv::aruco::DetectorParameters detParams;
     cv::aruco::CharucoParameters charucoParams;
     if (refine) {
@@ -56,20 +60,21 @@ int main() {
         camDatas[i].isMaster = false;
 
         switch (slaveWorkers[i]) {
-            case YACCP::WorkerTypes::propheseeDVS:
+            case YACCP::WorkerTypes::propheseeDvsEvk4:
                 cameraWorkers.emplace_back(std::make_unique<YACCP::PropheseeDVSWorker>(
                     stopSource,
-                    camDatas[i],
+                    camDatas,
                     fps,
                     i,
-                    acc
+                    acc,
+                    1
                 ));
                 break;
 
-            case YACCP::WorkerTypes::baslerRGB:
+            case YACCP::WorkerTypes::baslerRgb:
                 cameraWorkers.emplace_back(std::make_unique<YACCP::BaslerRGBWorker>(
                     stopSource,
-                    camDatas[i],
+                    camDatas,
                     fps,
                     i
                 ));
@@ -89,20 +94,21 @@ int main() {
 
     camDatas.back().isMaster = true;
     switch (masterWorker) {
-        case YACCP::WorkerTypes::propheseeDVS:
+        case YACCP::WorkerTypes::propheseeDvsEvk4:
             cameraWorkers.emplace_back(std::make_unique<YACCP::PropheseeDVSWorker>(
                 stopSource,
-                camDatas.back(),
+                camDatas,
                 fps,
                 camDatas.size() - 1,
-                acc
+                acc,
+                1
             ));
             break;
 
-        case YACCP::WorkerTypes::baslerRGB:
+        case YACCP::WorkerTypes::baslerRgb:
             cameraWorkers.emplace_back(std::make_unique<YACCP::BaslerRGBWorker>(
                 stopSource,
-                camDatas.back(),
+                camDatas,
                 fps,
                 camDatas.size() - 1
             ));
@@ -120,8 +126,11 @@ int main() {
         }
     }
 
-    YACCP::VideoViewer videoViewer{stopSource, viewsHorizontal, camDatas, charucoDetector};
+    YACCP::VideoViewer videoViewer{stopSource, viewsHorizontal, camDatas, charucoDetector, boundingBoxQ};
     threads.emplace_back(&YACCP::VideoViewer::start, &videoViewer);
+
+    YACCP::DetectionValidator detectionValidator{stopSource, camDatas, charucoDetector, boundingBoxQ};
+    threads.emplace_back(&YACCP::DetectionValidator::start, &detectionValidator);
 
     for (auto &thread: threads) {
         thread.join();

@@ -8,7 +8,7 @@ namespace YACCP {
     class BaslerRGBWorker : public CameraWorker {
     public:
         BaslerRGBWorker(std::stop_source stopSource,
-                        CamData &camData,
+                        std::vector<YACCP::CamData> &camDatas,
                         int fps,
                         int id,
                         std::string camId = {});
@@ -20,6 +20,9 @@ namespace YACCP {
         ~BaslerRGBWorker() override;
 
     private:
+        int requestedFrame_{1}; // Start from frame 1
+        int detectionInterval_{2}; // seconds
+
         void setPixelFormat(GenApi::INodeMap &nodeMap);
 
         std::tuple<int, int> getSetNodeMapParameters(GenApi::INodeMap &nodeMap);

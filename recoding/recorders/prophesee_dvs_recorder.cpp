@@ -1,5 +1,6 @@
 #include <metavision/sdk/core/algorithms/polarity_filter_algorithm.h>
 #include <metavision/sdk/core/utils/cd_frame_generator.h>
+#include <metavision/sdk/core/algorithms/on_demand_frame_generation_algorithm.h>
 #include <metavision/sdk/stream/camera.h>
 
 #include <metavision/hal/facilities/i_hw_identification.h>
@@ -13,15 +14,11 @@
 #include <string>
 
 
-#include "../utility.hpp"
+#include "../Utility.hpp"
 #include "camera_worker.hpp"
+#include "../detection_validator.hpp"
 
 namespace YACCP {
-    bool createDirs(const std::string &path) {
-        std::filesystem::path p(path);
-        return std::filesystem::create_directories(p);
-    }
-
     std::string sourceTypeToString(Metavision::OnlineSourceType type) {
         switch (type) {
             case Metavision::OnlineSourceType::EMBEDDED:
@@ -69,13 +66,15 @@ namespace YACCP {
     }
 
     PropheseeDVSWorker::PropheseeDVSWorker(std::stop_source stopSource,
-                                           CamData &camData,
+                                           std::vector<YACCP::CamData> &camDatas,
                                            const int fps,
                                            const int id,
                                            const int accumulation_time,
-                                           const std::string camId) : CameraWorker(stopSource, camData,
-                                                                          fps, id, std::move(camId)),
-                                                                      accumulationTime_(accumulation_time) {
+                                           const int fallingEdgePolarity,
+                                           const std::string camId)
+        : CameraWorker(stopSource, camDatas, fps, id, std::move(camId)),
+          accumulationTime_(accumulation_time),
+          fallingEdgePolarity_(fallingEdgePolarity) {
     }
 
     void PropheseeDVSWorker::listAvailableSources() {
@@ -104,7 +103,7 @@ namespace YACCP {
 
 
     void PropheseeDVSWorker::start() {
-        (void) utility::createDirs("./data/eventfile/");
+        (void) Utility::createDirs("./data/eventfile/");
 
         Metavision::Camera cam;
 
@@ -147,12 +146,21 @@ namespace YACCP {
             const auto &geometry = cam.geometry();
             camData_.width = geometry.get_width();
             camData_.height = geometry.get_height();
+            bool requestNew{true};
 
             // Configure facilities like biases en timing interfaces.
             configureFacilities(cam);
 
             Metavision::CDFrameGenerator cdFrameGenerator{geometry.get_width(), geometry.get_height()};
             cdFrameGenerator.set_display_accumulation_time_us(accumulationTime_);
+
+
+            Metavision::OnDemandFrameGenerationAlgorithm onDemandFrameGenerator{
+                geometry.get_width(),
+                geometry.get_height(),
+                static_cast<uint32_t>(std::round(1e6 / static_cast<double>(fps_)))
+            };
+
 
             (void) cdFrameGenerator.start(
                 fps_,
@@ -162,13 +170,45 @@ namespace YACCP {
                     frame.copyTo(cdFrame);
                 });
 
+            (void) cam.ext_trigger().add_callback(
+                [this, &onDemandFrameGenerator, &requestNew](const Metavision::EventExtTrigger *begin,
+                                                const Metavision::EventExtTrigger *end) {
+
+                    if (requestedFrame_ < 0) {
+                        (void) camData_.frameRequestQ.try_dequeue(requestedFrame_);
+                    }
+
+                    for (auto ev = begin; ev != end; ++ev) {
+                        // Check for falling edge trigger and increment frame index.
+                        if (ev->p == fallingEdgePolarity_) {
+                            // Handle falling edge trigger event
+                            ++frameIndex_;
+                        }
+
+                        // If a frame was requested and the current frame index matches or
+                        // is larger than the requested frame, generate and enqueue it.
+                        if (frameIndex_ >= requestedFrame_ && requestedFrame_ >= 0) {
+                            VerifyTask task;
+                            task.id = requestedFrame_;
+                            onDemandFrameGenerator.generate(ev->t, task.frame);
+                            camData_.frameVerifyQ.enqueue(task);
+
+                            requestedFrame_ = -1;
+                        }
+                    }
+                });
+
             (void) cam.cd().add_callback(
-                [&cdFrameGenerator, &pol_filter](const Metavision::EventCD *begin, const Metavision::EventCD *end) {
+                [&pol_filter, &cdFrameGenerator, &onDemandFrameGenerator](
+            const Metavision::EventCD *begin,
+            const Metavision::EventCD *end) {
                     std::vector<Metavision::EventCD> polFilterOut;
                     pol_filter.process_events(begin, end, std::back_inserter(polFilterOut));
                     begin = polFilterOut.data();
                     end = begin + polFilterOut.size();
+
                     cdFrameGenerator.add_events(begin, end);
+                    onDemandFrameGenerator.process_events(begin, end);
                 });
 
             auto now = std::chrono::system_clock::now();
@@ -177,11 +217,13 @@ namespace YACCP {
 
             ss << std::put_time(std::localtime(&localTime), "%F_%H-%M-%S");
 
+            // TODO: Make path configurable.
+            // TODO: Make eventfile recording optional.
             (void) cam.start();
             (void) cam.start_recording("./data/eventfile/raw_recording_" + ss.str() + ".raw");
 
             camData_.isRunning = cam.is_running();
-            while (cam.is_running() && !stopSource_.stop_requested()) {
+            while (cam.is_running() && !stopToken_.stop_requested()) {
                 cv::Mat localFrame;
                 {
                     std::unique_lock<std::mutex> lock(cd_frame_mutex);

@@ -132,7 +132,8 @@ def calibrate(img_name, debug_dir):
 
     def processImage(fn):
         print('processing %s... ' % fn)
-        img = cv.imread(fn, cv.IMREAD_GRAYSCALE)
+        img_c = cv.imread(fn)
+        img = cv.cvtColor(img_c, cv.COLOR_BGR2GRAY)
         if img is None:
             print("Failed to load", fn)
             return None
@@ -143,11 +144,70 @@ def calibrate(img_name, debug_dir):
         corners = 0
 
         corners, charucoIds, _, _ = charuco_detector.detectBoard(img)
+
         if (len(corners) > 3):
             frame_obj_points, frame_img_points = board.matchImagePoints(corners, charucoIds)
             found = True
         else:
             found = False
+
+        img1 = img_c.copy()
+        img2 = img_c.copy()
+        img3 = img_c.copy()
+
+
+
+        if frame_img_points is None or frame_img_points.size == 0 or frame_img_points.shape[0] < 3:
+            return  # or just skip drawing
+
+        x0 = int(frame_img_points[:, 0, 0].min())
+        y0 = int(frame_img_points[:, 0, 1].min())
+        x1 = int(frame_img_points[:, 0, 0].max())
+        y1 = int(frame_img_points[:, 0, 1].max())
+
+        # Guard: no NaNs/inf
+        frame_img_points2 = frame_img_points.reshape(-1, 2)
+        if not np.isfinite(frame_img_points2).all():
+            return  # skip this frame
+
+        # Normalize to contour format OpenCV likes: (N,1,2) int32
+        # frame_img_points3 = np.ascontiguousarray(frame_img_points2.astype(np.int32)).reshape(-1, 1, 2)
+
+        nx, ny = board.getChessboardSize()
+
+        def id_to_rowcol(cid, nx):
+            row = cid // nx
+            col = cid % nx
+            return row, col
+
+        rows = {}
+        for pt, cid in zip(corners.reshape(-1, 2), charucoIds.flatten()):
+            r, c = id_to_rowcol(cid, nx)
+            rows.setdefault(r, []).append((c, pt))
+
+        for r, cols in rows.items():
+            cols.sort(key=lambda x: x[0])  # sort by column index
+            pts = np.array([p for _, p in cols], dtype=np.int32)
+
+            if len(pts) >= 2:
+                pts = pts.reshape(-1, 1, 2)
+                cv.polylines(img1, [pts], False, (0, 0, 255), 2)
+
+        # cv.polylines(img1, [box], True, (0, 255, 0), 3)
+
+        cv.polylines(img3, [frame_img_points.astype(int)], False, (0, 0, 255), 2)
+
+        cv.imshow('img1', img1)
+        # cv.imshow('img2', img2)
+        cv.imshow('img3', img3)
+        while (True):
+            k = cv.waitKey(1)
+            if k==27:
+                break
+        cv.destroyAllWindows()
+        return
+
+
 
         if debug_dir:
             vis = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
@@ -173,6 +233,8 @@ def calibrate(img_name, debug_dir):
 
     # calculate camera distortion
     rms, camera_matrix, dist_coefs, _rvecs, _tvecs = cv.calibrateCamera(obj_points, img_points, image_size, None, None)
+
+    cv.matchI
 
     data = {
         "camera_matrix": camera_matrix.tolist(),
@@ -354,7 +416,7 @@ def warp_bbox_raw_to_rect(bbox_raw,
     ys = np.linspace(y, y + h, ny, dtype=np.float32)
     grid_x, grid_y = np.meshgrid(xs, ys)  # shape (ny, nx)
 
-    pts_raw = np.stack([grid_x, grid_y], axis=-1).reshape(-1, 1, 2)  # (N,1,2)
+    frame_img_points_raw = np.stack([grid_x, grid_y], axis=-1).reshape(-1, 1, 2)  # (N,1,2)
 
     # undistort + rectify all sample points
     pts_rect = cv.undistortPoints(pts_raw, K, dist, R=R_rect, P=P_rect)
@@ -382,62 +444,62 @@ if __name__ == '__main__':
     debug_dir = "C:/Users/Bas_K/source/repos/Thesis/data/output/"
 
     # rms_l, camera_matrix_l, dist_coefs_l, _rvecs_l, _tvecs_l = calibrate(data_dir_left, debug_dir_left)
-    # rms_r, camera_matrix_r, dist_coefs_r, _rvecs_r, _tvecs_r = calibrate(data_dir_right, debug_dir_right)
+    rms_r, camera_matrix_r, dist_coefs_r, _rvecs_r, _tvecs_r = calibrate(data_dir_right, debug_dir_right)
 
-    camera_matrix_l, dist_coefs_l = load_calibration(calib_json_left)
-    camera_matrix_r, dist_coefs_r = load_calibration(calib_json_right)
-
-    rawL = cv.imread("C:/Users/Bas_K/source/repos/Thesis/data/output/prophesee_dvs/frame_2057_board.png")
-    rawR = cv.imread("C:/Users/Bas_K/source/repos/Thesis/data/output/basler_rgb/frame_2057_board.png")
-
-    R, T = stereo_calibrate(camera_matrix_l, dist_coefs_l, camera_matrix_r, dist_coefs_r, data_dir_left, data_dir_right)
-
-    R1, R2, P1, P2, Q, roi1, roi2 = cv.stereoRectify(camera_matrix_l, dist_coefs_l, camera_matrix_r, dist_coefs_r,
-                                                     (1920, 1200), R, T, alpha=0.89)
-    # (1920, 1200)
-    # (1280, 720)
-    map1L, map2L = cv.initUndistortRectifyMap(camera_matrix_l, dist_coefs_l, R1, P1, (1920, 1200), cv.CV_16SC2)
-    map1R, map2R = cv.initUndistortRectifyMap(camera_matrix_r, dist_coefs_r, R2, P2, (1920, 1200), cv.CV_16SC2)
-
-    rectL = cv.remap(rawL, map1L, map2L, cv.INTER_LINEAR)
-    rectR = cv.remap(rawR, map1R, map2R, cv.INTER_LINEAR)
-
-    disp = compute_disparity(rectL, rectR)
-
-    bbox_left_raw = (656, 526, 400, 192)  # from your detector on rectL
-    bbox_rect_left = warp_bbox_raw_to_rect(
-        bbox_left_raw,
-        camera_matrix_l, dist_coefs_l,
-        R1, P1,
-    )
-
-    bbox_right = transfer_bbox_left_to_right(bbox_rect_left, disp)
-
-    print("rectL shape:", rectL.shape)
-    print("rectR shape:", rectR.shape)
-    print("bbox_left:", bbox_rect_left)
-
-    disp_roi = disp[
-        bbox_rect_left[1]:bbox_rect_left[1] + bbox_rect_left[3],
-        bbox_rect_left[0]:bbox_rect_left[0] + bbox_rect_left[2],
-    ]
-    valid = ~np.isnan(disp_roi)
-    print("valid disparity fraction:",
-          np.count_nonzero(valid) / disp_roi.size if disp_roi.size > 0 else 0,
-          )
-    print("median disparity in bbox:", np.nanmedian(disp_roi))
-
-    print("bbox_right:", bbox_right)
-
-    xL, yL, wL, hL = bbox_rect_left
-    cv.rectangle(rectL, (xL, yL), (xL + wL, yL + hL), (0, 255, 0), 2)
-
-    if bbox_right is not None:
-        xR, yR, wR, hR = bbox_right
-        cv.rectangle(rectR, (xR, yR), (xR + wR, yR + hR), (0, 0, 255), 2)
-
-    cv.imshow("rectL", rectL)
-    cv.imshow("rectR", rectR)
-    cv.waitKey(0)
-
-    cv.destroyAllWindows()
+    # camera_matrix_l, dist_coefs_l = load_calibration(calib_json_left)
+    # camera_matrix_r, dist_coefs_r = load_calibration(calib_json_right)
+    #
+    # rawL = cv.imread("C:/Users/Bas_K/source/repos/Thesis/data/output/prophesee_dvs/frame_2057_board.png")
+    # rawR = cv.imread("C:/Users/Bas_K/source/repos/Thesis/data/output/basler_rgb/frame_2057_board.png")
+    #
+    # R, T = stereo_calibrate(camera_matrix_l, dist_coefs_l, camera_matrix_r, dist_coefs_r, data_dir_left, data_dir_right)
+    #
+    # R1, R2, P1, P2, Q, roi1, roi2 = cv.stereoRectify(camera_matrix_l, dist_coefs_l, camera_matrix_r, dist_coefs_r,
+    #                                                  (1920, 1200), R, T, alpha=0.89)
+    # # (1920, 1200)
+    # # (1280, 720)
+    # map1L, map2L = cv.initUndistortRectifyMap(camera_matrix_l, dist_coefs_l, R1, P1, (1920, 1200), cv.CV_16SC2)
+    # map1R, map2R = cv.initUndistortRectifyMap(camera_matrix_r, dist_coefs_r, R2, P2, (1920, 1200), cv.CV_16SC2)
+    #
+    # rectL = cv.remap(rawL, map1L, map2L, cv.INTER_LINEAR)
+    # rectR = cv.remap(rawR, map1R, map2R, cv.INTER_LINEAR)
+    #
+    # disp = compute_disparity(rectL, rectR)
+    #
+    # bbox_left_raw = (656, 526, 400, 192)  # from your detector on rectL
+    # bbox_rect_left = warp_bbox_raw_to_rect(
+    #     bbox_left_raw,
+    #     camera_matrix_l, dist_coefs_l,
+    #     R1, P1,
+    # )
+    #
+    # bbox_right = transfer_bbox_left_to_right(bbox_rect_left, disp)
+    #
+    # print("rectL shape:", rectL.shape)
+    # print("rectR shape:", rectR.shape)
+    # print("bbox_left:", bbox_rect_left)
+    #
+    # disp_roi = disp[
+    #     bbox_rect_left[1]:bbox_rect_left[1] + bbox_rect_left[3],
+    #     bbox_rect_left[0]:bbox_rect_left[0] + bbox_rect_left[2],
+    # ]
+    # valid = ~np.isnan(disp_roi)
+    # print("valid disparity fraction:",
+    #       np.count_nonzero(valid) / disp_roi.size if disp_roi.size > 0 else 0,
+    #       )
+    # print("median disparity in bbox:", np.nanmedian(disp_roi))
+    #
+    # print("bbox_right:", bbox_right)
+    #
+    # xL, yL, wL, hL = bbox_rect_left
+    # cv.rectangle(rectL, (xL, yL), (xL + wL, yL + hL), (0, 255, 0), 2)
+    #
+    # if bbox_right is not None:
+    #     xR, yR, wR, hR = bbox_right
+    #     cv.rectangle(rectR, (xR, yR), (xR + wR, yR + hR), (0, 0, 255), 2)
+    #
+    # cv.imshow("rectL", rectL)
+    # cv.imshow("rectR", rectR)
+    # cv.waitKey(0)
+    #
+    # cv.destroyAllWindows()
