@@ -1,7 +1,3 @@
-//
-// Created by Bas_K on 2025-12-20.
-//
-
 #ifndef STEREO_CAMERA_CALIBRATION_IMAGE_VALIDATOR_HPP
 #define STEREO_CAMERA_CALIBRATION_IMAGE_VALIDATOR_HPP
 #include <filesystem>

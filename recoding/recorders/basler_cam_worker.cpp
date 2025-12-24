@@ -9,7 +9,7 @@
 
 #include <pylon/PylonIncludes.h>
 
-#include "../Utility.hpp"
+#include "../utility.hpp"
 #include "../detection_validator.hpp"
 
 

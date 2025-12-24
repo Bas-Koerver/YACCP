@@ -5,8 +5,8 @@
 
 #include <opencv2/objdetect/charuco_detector.hpp>
 
-#include "Utility.hpp"
-#include "Video_viewer.hpp"
+#include "utility.hpp"
+#include "video_viewer.hpp"
 
 #include "recorders/camera_worker.hpp"
 

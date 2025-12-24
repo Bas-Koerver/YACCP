@@ -2,7 +2,7 @@
 #include <metavision/sdk/ui/utils/window.h>
 #include <metavision/sdk/ui/utils/event_loop.h>
 
-#include "Video_viewer.hpp"
+#include "video_viewer.hpp"
 
 #include <fstream>
 
@@ -10,7 +10,7 @@
 #include <numeric>
 #include <vector>
 
-#include "Utility.hpp"
+#include "utility.hpp"
 
 cv::Scalar getColourGradient(int index, int maxIndex) {
     const double ratio{255.0 / (static_cast<double>(maxIndex) / 2.0)};

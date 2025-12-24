@@ -230,7 +230,7 @@ def calibrate(img_name, debug_dir):
     # calculate camera distortion
     rms, camera_matrix, dist_coefs, _rvecs, _tvecs = cv.calibrateCamera(obj_points, img_points, image_size, None, None)
 
-    cv.matchI
+    cv.match
 
     data = {
         "camera_matrix": camera_matrix.tolist(),

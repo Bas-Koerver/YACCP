@@ -14,7 +14,7 @@
 #include <string>
 
 
-#include "../Utility.hpp"
+#include "../utility.hpp"
 #include "camera_worker.hpp"
 #include "../detection_validator.hpp"
 

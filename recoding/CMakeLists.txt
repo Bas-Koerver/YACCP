@@ -35,11 +35,13 @@ add_executable(
         recorders/camera_worker.cpp recorders/camera_worker.hpp
         recorders/prophesee_cam_worker.cpp recorders/prophesee_cam_worker.hpp
         recorders/basler_cam_worker.cpp recorders/basler_cam_worker.hpp
-        utility.cpp utility.hpp
+        Utility.cpp Utility.hpp
         Video_viewer.cpp Video_viewer.hpp
         detection_validator.cpp detection_validator.hpp
         Image_validator.cpp
         Image_validator.hpp
+        calibration.cpp
+        calibration.hpp
 )
 
 target_link_libraries(

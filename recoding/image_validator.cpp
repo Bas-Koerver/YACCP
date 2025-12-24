@@ -2,7 +2,7 @@
 // Created by Bas_K on 2025-12-20.
 //
 
-#include "Image_validator.hpp"
+#include "image_validator.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -217,6 +217,7 @@ namespace YACCP {
                 continue;
             }
 
+            // TODO: Change to direct vector indexing.
             for (auto j{0}; j < cams.size(); ++j) {
                 try {
                     std::filesystem::copy(jobPath_ / "images/raw" / cams[j] / files[i],

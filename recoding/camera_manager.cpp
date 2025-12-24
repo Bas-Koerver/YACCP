@@ -2,8 +2,8 @@
 #include <map>
 
 #include "detection_validator.hpp"
-#include "Utility.hpp"
-#include "Video_viewer.hpp"
+#include "utility.hpp"
+#include "video_viewer.hpp"
 
 #include "recorders/basler_cam_worker.hpp"
 #include "recorders/camera_worker.hpp"
@@ -11,7 +11,8 @@
 
 #include <GLFW/glfw3.h>
 
-#include "Image_validator.hpp"
+#include "Calibration.hpp"
+#include "image_validator.hpp"
 
 int getWorstStopCode(const std::vector<YACCP::CamData> &camDatas) {
     int stopCode = 0;
@@ -76,21 +77,28 @@ int main() {
     std::filesystem::path path = workingDir / userPath / "data";
     std::filesystem::path outputPath = path / ("job_" + dateTime.str() + "/");
 
+    cv::aruco::Dictionary dictionary{cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_50)};
+    cv::aruco::CharucoBoard board{cv::Size(squaresX, squaresY), squareLength, markerLength, dictionary};
+    cv::aruco::CharucoDetector charucoDetector(board, charucoParams, detParams);
+
+
     YACCP::ImageValidator imageValidator(mode->width - 100,
                                          mode->height - 100,
                                          path);
     imageValidator.listJobs();
-    imageValidator.validateImages(
-        "job_2025-12-21_14-56-20"
-    );
+    // imageValidator.validateImages(
+    //     "job_2025-12-21_14-56-20"
+    // );
+
+
+    YACCP::Calibration calibration(charucoDetector, path, cornerMin);
+
+    calibration.calibrate("job_2025-12-21_14-56-20");
+
     return 0;
 
     (void) std::filesystem::create_directories(outputPath / "images/raw");
     // (void) std::filesystem::create_directories(outputPath / "images/verified");
-
-    cv::aruco::Dictionary dictionary{cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_50)};
-    cv::aruco::CharucoBoard board{cv::Size(squaresX, squaresY), squareLength, markerLength, dictionary};
-    cv::aruco::CharucoDetector charucoDetector(board, charucoParams, detParams);
 
     for (int i = 0; i < numCams - 1; ++i) {
         camDatas[i].isMaster = false;
