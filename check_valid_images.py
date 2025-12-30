@@ -105,8 +105,8 @@ def frame_at_nth_trigger(
 
 
 if __name__ == "__main__":
-    path = "C:/Users/Bas_K/source/repos/Thesis/stereo-camera-calibration/recoding/cmake-build-release-visual-studio/data/eventfile/output.hdf5"
-    data_dir = "C:/Users/Bas_K/source/repos/Thesis/stereo-camera-calibration/recoding/cmake-build-release-visual-studio/data/"
+    path = "/src/recoding/cmake-build-release-visual-studio/data/eventfile/output.hdf5"
+    data_dir = "/src/recoding/cmake-build-release-visual-studio/data/"
     exposure_us = 33333
     frame_number = 12
 

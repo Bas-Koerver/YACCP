@@ -3,7 +3,7 @@
 #include <opencv2/objdetect/aruco_detector.hpp>
 #include <opencv2/objdetect/charuco_detector.hpp>
 
-#include "../utility.hpp"
+#include "utility.hpp"
 
 namespace YACCP {
     // MISRA deviation: OpenCV Charuco API requires std::vector

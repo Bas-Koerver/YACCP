@@ -16,7 +16,7 @@
 
 #include "../detection_validator.hpp"
 #include "../job_data.hpp"
-#include "../utility.hpp"
+
 
 namespace YACCP {
     std::string sourceTypeToString(Metavision::OnlineSourceType type) {

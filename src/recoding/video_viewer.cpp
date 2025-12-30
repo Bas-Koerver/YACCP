@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "job_data.hpp"
-#include "utility.hpp"
+#include "../utility.hpp"
 
 cv::Scalar getColourGradient(int index, int maxIndex) {
     const double ratio{255.0 / (static_cast<double>(maxIndex) / 2.0)};

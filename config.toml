@@ -5,7 +5,25 @@ square_length = 0.0295
 marker_length = 0.0206
 
 [detection]
+charuco_dictionart = 8
 detection_interval = 2
+minimum_corners = 0.125
 refine = false
+
+[recording]
+fps = 30
+accumulation_time = 33333
+slave_workers = "prophesee"
+master_worker = "basler"
+
+[recording.prophesee]
+save_eventfile = true
+
+[recording.basler]
+
+
+[viewing]
+views_horizontal = 3
+
 
 

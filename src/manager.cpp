@@ -2,9 +2,10 @@
 #include <csignal>
 #include <fstream>
 #include <map>
+#include <CLI/App.hpp>
 
+#include "utility.hpp"
 #include "recoding/detection_validator.hpp"
-#include "recoding/utility.hpp"
 #include "recoding/video_viewer.hpp"
 
 #include "recoding/recorders/basler_cam_worker.hpp"
@@ -12,8 +13,11 @@
 #include "recoding/recorders/prophesee_cam_worker.hpp"
 
 #include <GLFW/glfw3.h>
+#ifdef NDEBUG
+#include <opencv2/core/utils/logger.hpp>
+#endif
 
-#include "recoding/Calibration.hpp"
+#include "calibration.hpp"
 #include "recoding/job_data.hpp"
 #include "tools/image_validator.hpp"
 
@@ -28,12 +32,71 @@ int getWorstStopCode(const std::vector<YACCP::CamData> &camDatas) {
     return stopCode;
 }
 
-int main() {
+int main(int argc, char **argv) {
+#ifdef NDEBUG
+    cv::utils::logging::setLogLevel(cv::utils::logging::LogLevel::LOG_LEVEL_WARNING);
+#endif
+
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW." << std::endl;
         raise(SIGABRT);
     }
     auto mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+    CLI::App app{"Yet another camera calibration program"};
+    app.set_help_all_flag("--help-all", "Expand all help");
+
+    CLI::App *boardCreation = app.add_subcommand("create-board", "Board creation");
+    CLI::App *record = app.add_subcommand("record", "Record detections");
+    CLI::App *validate = app.add_subcommand("validate", "Validate recorded images");
+    CLI::App *monoCalibration = app.add_subcommand("mono-calibration", "Perform mono calibration");
+    CLI::App *stereoCalibration = app.add_subcommand("stereo-calibration", "Perform stereo calibration");
+    // app.require_subcommand(1);
+
+    std::filesystem::path userPath;
+    app.add_option("-p,--path", userPath,
+                   "Path where config file is stored and where data directory will be placed");
+
+    auto squareLength{100};
+    boardCreation->add_option("-s, --square-length", squareLength, "The square length in pixels")->default_val(100)->
+            check(CLI::PositiveNumber);
+
+    auto markerLength{70};
+    boardCreation->add_option("-m, --marker-length", markerLength, "The ArUco marker length in pixels")->default_val(70)
+            ->check(CLI::PositiveNumber);
+
+    int border{squareLength - markerLength};
+    boardCreation->add_option("-e, --marker-border", border,
+                   "The border size (margins) of the ArUco marker in pixels")->default_str("square-length - marker-length");
+
+    auto borderPoints{1};
+    boardCreation->add_option("-b, --border-point", borderPoints, "The amount of points (pixels) for the border")->default_val(1);
+
+    auto generateImage{true};
+    boardCreation->add_flag("!-i, !--image", generateImage,
+                            "Whether to generate an image of the generated board")->default_str("true");
+
+    auto generateVideo{false};
+    boardCreation->add_flag("-v, --video", generateVideo,
+                            "Whether to generate an event video of the generated board")->default_str("false");
+
+    CLI11_PARSE(app, argc, argv);
+
+    auto workingDir = std::filesystem::current_path();
+    std::filesystem::path path = workingDir / userPath / "test12345";
+    auto a = std::filesystem::create_directories(path);
+
+    std::cout << std::filesystem::absolute(userPath) << "\n";
+
+    // std::cout << "Working on --file from start: " << files << '\n';
+    // std::cout << "Working on --count from stop: " << s->count() << ", direct count: " << boardCreation->count("--count")
+    //         << '\n';
+    // std::cout << "Count of --random flag: " << app.count("--random") << '\n';
+    // for (auto *subcom: app.get_subcommands())
+    //     std::cout << "Subcommand: " << subcom->get_name() << '\n';
+
+    return 0;
+
 
     // TODO: Add config / CLI
     // CLI to define high level parameters, what to do (create board, record, validate images, calibrate), where
@@ -46,8 +109,7 @@ int main() {
     std::vector camPlacement{0, 1};
     auto squaresX{7};
     auto squaresY{5};
-    float squareLength{0.0295};
-    float markerLength{0.0206};
+
     auto refine{false};
     auto fps{30};
     auto acc{33333};
@@ -55,10 +117,9 @@ int main() {
     float cornerMin{.25F};
     // cv::aruco::DICT_6X6_50
     int dictId{8};
-    std::filesystem::path userPath{""};
 
     // Current working directory.
-    auto workingDir = std::filesystem::current_path();
+    // auto workingDir = std::filesystem::current_path();
     std::stop_source stopSource;
     auto numCams{static_cast<int>(slaveWorkers.size() + 1)};
     std::vector<YACCP::CamData> camDatas(numCams);
@@ -80,11 +141,11 @@ int main() {
     std::stringstream dateTime;
     dateTime << std::put_time(std::localtime(&localTime), "%F_%H-%M-%S");
     // TODO: Catch invalid paths.
-    std::filesystem::path path = workingDir / userPath / "data";
+    // std::filesystem::path path = workingDir / userPath / "data";
     std::filesystem::path outputPath = path / ("job_" + dateTime.str() + "/");
 
     cv::aruco::Dictionary dictionary{cv::aruco::getPredefinedDictionary(dictId)};
-    cv::aruco::CharucoBoard board{cv::Size(squaresX, squaresY), squareLength, markerLength, dictionary};
+    cv::aruco::CharucoBoard board{cv::Size(squaresX, squaresY), static_cast<float>(squareLength), static_cast<float>(markerLength), dictionary};
     cv::aruco::CharucoDetector charucoDetector(board, charucoParams, detParams);
 
     YACCP::ImageValidator imageValidator(mode->width - 100,

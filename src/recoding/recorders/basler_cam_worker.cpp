@@ -10,7 +10,6 @@
 #include <pylon/PylonIncludes.h>
 
 #include "../job_data.hpp"
-#include "../utility.hpp"
 #include "../detection_validator.hpp"
 
 
