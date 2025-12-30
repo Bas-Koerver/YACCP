@@ -7,7 +7,7 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/imgcodecs.hpp>
 
-#include "image_validator.hpp"
+#include "../tools/image_validator.hpp"
 #include "job_data.hpp"
 #include "utility.hpp"
 

@@ -2,7 +2,7 @@
 // Created by Bas_K on 2025-12-20.
 //
 
-#include "image_validator.hpp"
+#include "../recoding/image_validator.hpp"
 
 #include <fstream>
 #include <iostream>

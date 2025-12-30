@@ -3,19 +3,19 @@
 #include <fstream>
 #include <map>
 
-#include "detection_validator.hpp"
-#include "utility.hpp"
-#include "video_viewer.hpp"
+#include "recoding/detection_validator.hpp"
+#include "recoding/utility.hpp"
+#include "recoding/video_viewer.hpp"
 
-#include "recorders/basler_cam_worker.hpp"
-#include "recorders/camera_worker.hpp"
-#include "recorders/prophesee_cam_worker.hpp"
+#include "recoding/recorders/basler_cam_worker.hpp"
+#include "recoding/recorders/camera_worker.hpp"
+#include "recoding/recorders/prophesee_cam_worker.hpp"
 
 #include <GLFW/glfw3.h>
 
-#include "Calibration.hpp"
-#include "job_data.hpp"
-#include "image_validator.hpp"
+#include "recoding/Calibration.hpp"
+#include "recoding/job_data.hpp"
+#include "tools/image_validator.hpp"
 
 int getWorstStopCode(const std::vector<YACCP::CamData> &camDatas) {
     int stopCode = 0;
