@@ -5,7 +5,7 @@ square_length = 0.0295
 marker_length = 0.0206
 
 [detection]
-charuco_dictionart = 8
+charuco_dictionary = 8
 detection_interval = 2
 minimum_corners = 0.125
 refine = false

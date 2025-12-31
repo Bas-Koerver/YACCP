@@ -9,9 +9,9 @@
 #include "create_charuco_board.hpp"
 
 namespace YACCP {
-    void CreateCharucoBoard::createVideo(const cv::Mat& image, cv::Size size, std::string path)
+    void CreateCharucoBoard::createVideo(const cv::Mat& image, cv::Size size, std::filesystem::path jobPath)
     {
-        std::string filename = path + ".mp4";
+        const std::string filename = (jobPath / "charuco_board.mp4").string();
         double fps{60.0};
         int codec{cv::VideoWriter::fourcc('a', 'v', 'c', '1')};
 
@@ -36,7 +36,7 @@ namespace YACCP {
     }
 
     void CreateCharucoBoard::createBoard(int squaresX, int squaresY, int squareLength, int markerLength, int border, int borderPoints,
-                            cv::aruco::Dictionary& dictionary, bool generateImage, bool generateVideo, std::string path)
+                            cv::aruco::Dictionary& dictionary, bool generateImage, bool generateVideo, std::filesystem::path jobPath)
     {
         cv::aruco::CharucoBoard board{
             cv::Size(squaresX, squaresY), static_cast<float>(squareLength), static_cast<float>(markerLength), dictionary
@@ -49,8 +49,8 @@ namespace YACCP {
 
         board.generateImage(imageSize, boardImage, border, borderPoints);
 
-        if (generateImage) { cv::imwrite((path + ".png"), boardImage); }
-        if (generateVideo) { createVideo(boardImage, imageSize, path); }
+        if (generateImage) { cv::imwrite((jobPath / "charuco_board.png").string(), boardImage); }
+        if (generateVideo) { createVideo(boardImage, imageSize, jobPath); }
     }
 }
 

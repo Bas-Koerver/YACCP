@@ -13,6 +13,8 @@
 #include "recoding/recorders/prophesee_cam_worker.hpp"
 
 #include <GLFW/glfw3.h>
+
+#include "tools/create_charuco_board.hpp"
 #ifdef NDEBUG
 #include <opencv2/core/utils/logger.hpp>
 #endif
@@ -20,6 +22,7 @@
 #include "calibration.hpp"
 #include "recoding/job_data.hpp"
 #include "tools/image_validator.hpp"
+#include <toml++/toml.hpp>
 
 int getWorstStopCode(const std::vector<YACCP::CamData> &camDatas) {
     int stopCode = 0;
@@ -44,6 +47,8 @@ int main(int argc, char **argv) {
     auto mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
     CLI::App app{"Yet another camera calibration program"};
+    app.get_formatter()->right_column_width(60);
+    app.get_formatter()->column_width(60);
     app.set_help_all_flag("--help-all", "Expand all help");
 
     CLI::App *boardCreation = app.add_subcommand("create-board", "Board creation");
@@ -51,40 +56,96 @@ int main(int argc, char **argv) {
     CLI::App *validate = app.add_subcommand("validate", "Validate recorded images");
     CLI::App *monoCalibration = app.add_subcommand("mono-calibration", "Perform mono calibration");
     CLI::App *stereoCalibration = app.add_subcommand("stereo-calibration", "Perform stereo calibration");
-    // app.require_subcommand(1);
+    app.require_subcommand(1);
 
     std::filesystem::path userPath;
-    app.add_option("-p,--path", userPath,
-                   "Path where config file is stored and where data directory will be placed");
+    app.add_option(
+        "-p,--path",
+        userPath,
+        "Path where config file is stored and where data directory will be placed"
+    )->default_str("Defaults to current dir")->check(CLI::ExistingPath);
 
     auto squareLength{100};
-    boardCreation->add_option("-s, --square-length", squareLength, "The square length in pixels")->default_val(100)->
-            check(CLI::PositiveNumber);
+    boardCreation->add_option(
+        "-s, --square-length",
+        squareLength,
+        "The square length in pixels"
+    )->default_val(100)->check(CLI::PositiveNumber);
 
     auto markerLength{70};
-    boardCreation->add_option("-m, --marker-length", markerLength, "The ArUco marker length in pixels")->default_val(70)
-            ->check(CLI::PositiveNumber);
+    boardCreation->add_option(
+        "-m, --marker-length",
+        markerLength,
+        "The ArUco marker length in pixels"
+    )->default_val(70)->check(CLI::PositiveNumber);
 
     int border{squareLength - markerLength};
-    boardCreation->add_option("-e, --marker-border", border,
-                   "The border size (margins) of the ArUco marker in pixels")->default_str("square-length - marker-length");
+    boardCreation->add_option(
+        "-e, --marker-border",
+        border,
+        "The border size (margins) of the ArUco marker in pixels"
+    )->default_str("square-length - marker-length");
 
     auto borderPoints{1};
-    boardCreation->add_option("-b, --border-point", borderPoints, "The amount of points (pixels) for the border")->default_val(1);
+    boardCreation->add_option(
+        "-b, --border-point",
+        borderPoints,
+        "The amount of points (pixels) for the border"
+    )->default_val(1)->check(CLI::PositiveNumber);
 
     auto generateImage{true};
-    boardCreation->add_flag("!-i, !--image", generateImage,
-                            "Whether to generate an image of the generated board")->default_str("true");
+    boardCreation->add_flag(
+        "!-i, !--image",
+        generateImage,
+        "Whether to generate an image of the generated board"
+    )->default_str("true");
 
     auto generateVideo{false};
-    boardCreation->add_flag("-v, --video", generateVideo,
-                            "Whether to generate an event video of the generated board")->default_str("false");
+    boardCreation->add_flag(
+        "-v, --video",
+        generateVideo,
+        "Whether to generate an event video of the generated board"
+    )->default_str("false");
 
     CLI11_PARSE(app, argc, argv);
 
+    auto now = std::chrono::system_clock::now();
+    auto localTime = std::chrono::system_clock::to_time_t(now);
+    std::stringstream dateTime;
+    dateTime << std::put_time(std::localtime(&localTime), "%F_%H-%M-%S");
+
     auto workingDir = std::filesystem::current_path();
-    std::filesystem::path path = workingDir / userPath / "test12345";
-    auto a = std::filesystem::create_directories(path);
+    std::filesystem::path path = workingDir / userPath;
+    std::filesystem::path jobPath = path / "data" / ("job_" + dateTime.str());
+    std::filesystem::create_directories(jobPath);
+
+
+    // TODO: Catch invalid paths.
+    // std::filesystem::path path = workingDir / userPath / "data";
+
+
+    toml::table tbl;
+    try
+    {
+        tbl = toml::parse_file((path / "config.toml").string());
+        std::cout << tbl << "\n";
+    }
+    catch (const toml::parse_error& err)
+    {
+        std::cerr << "Parsing failed:\n" << err << "\n";
+        return 1;
+    }
+
+    auto squaresX{7};
+    auto squaresY{5};
+    auto dictId{8};
+
+    if (tbl["board"]["squares_x"]) squaresX = tbl["board"]["squares_x"].value<int>().value();
+    if (tbl["board"]["squares_y"]) squaresY = tbl["board"]["squares_y"].value<int>().value();
+    if (tbl["detection"]["charuco_dictionary"]) squaresX = tbl["detection"]["charuco_dictionary"].value<int>().value();
+    cv::aruco::Dictionary dictionary{cv::aruco::getPredefinedDictionary(dictId)};
+
+    if (*boardCreation) YACCP::CreateCharucoBoard::createBoard(squaresX, squaresY, squareLength, markerLength, border, borderPoints, dictionary, generateImage, generateVideo, jobPath);
 
     std::cout << std::filesystem::absolute(userPath) << "\n";
 
@@ -107,8 +168,6 @@ int main(int argc, char **argv) {
     slaveWorkers = {YACCP::WorkerTypes::prophesee};
     masterWorker = YACCP::WorkerTypes::basler;
     std::vector camPlacement{0, 1};
-    auto squaresX{7};
-    auto squaresY{5};
 
     auto refine{false};
     auto fps{30};
@@ -116,7 +175,7 @@ int main(int argc, char **argv) {
     auto viewsHorizontal{3};
     float cornerMin{.25F};
     // cv::aruco::DICT_6X6_50
-    int dictId{8};
+
 
     // Current working directory.
     // auto workingDir = std::filesystem::current_path();
@@ -136,16 +195,19 @@ int main(int argc, char **argv) {
     if (refine) {
         charucoParams.tryRefineMarkers = true;
     }
-    auto now = std::chrono::system_clock::now();
-    auto localTime = std::chrono::system_clock::to_time_t(now);
-    std::stringstream dateTime;
+
     dateTime << std::put_time(std::localtime(&localTime), "%F_%H-%M-%S");
     // TODO: Catch invalid paths.
     // std::filesystem::path path = workingDir / userPath / "data";
     std::filesystem::path outputPath = path / ("job_" + dateTime.str() + "/");
 
-    cv::aruco::Dictionary dictionary{cv::aruco::getPredefinedDictionary(dictId)};
-    cv::aruco::CharucoBoard board{cv::Size(squaresX, squaresY), static_cast<float>(squareLength), static_cast<float>(markerLength), dictionary};
+    // cv::aruco::Dictionary dictionary{cv::aruco::getPredefinedDictionary(dictId)};
+    cv::aruco::CharucoBoard board{
+        cv::Size(squaresX, squaresY),
+        static_cast<float>(squareLength),
+        static_cast<float>(markerLength),
+        dictionary
+    };
     cv::aruco::CharucoDetector charucoDetector(board, charucoParams, detParams);
 
     YACCP::ImageValidator imageValidator(mode->width - 100,
