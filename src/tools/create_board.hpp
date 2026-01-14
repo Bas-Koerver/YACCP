@@ -9,6 +9,9 @@
 namespace YACCP {
     class CreateBoard {
     public:
+        static void listJobs(const std::filesystem::path& dataPath);
+
+        // TODO: Add different board types (chessboard, circle grid).
         static void charuco(const Config::FileConfig& fileConfig,
                             const CLI::BoardCreationCmdConfig& boardCreationConfig,
                             const std::filesystem::path& jobPath);

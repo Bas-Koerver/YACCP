@@ -1,5 +1,6 @@
 #ifndef YACCP_RECORDING_VIDEO_VIEWER_HPP
 #define YACCP_RECORDING_VIDEO_VIEWER_HPP
+#include <readerwriterqueue.h>
 #include <stop_token>
 #include <vector>
 #include <opencv2/objdetect/charuco_detector.hpp>

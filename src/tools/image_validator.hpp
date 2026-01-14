@@ -4,7 +4,6 @@
 
 #include <metavision/sdk/core/utils/frame_composer.h>
 
-#include <opencv2/core/mat.hpp>
 
 namespace YACCP {
     class ImageValidator {
@@ -15,8 +14,6 @@ namespace YACCP {
                             int resolutionHeight,
                             const std::filesystem::path& dataPath,
                             const std::string& jobId);
-
-        [[nodiscard]] static bool isNonEmptyDirectory(const std::filesystem::path& path);
 
     private:
         std::filesystem::path jobPath_;

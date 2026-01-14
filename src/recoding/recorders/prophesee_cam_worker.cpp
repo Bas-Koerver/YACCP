@@ -134,8 +134,6 @@ namespace YACCP {
         printCurrentDevice(cam, camData_);
 
         if (camData_.runtimeData.isOpen) {
-            // TODO: add biases file loading.
-
             // TODO: add runtime error handling
             cv::Mat cdFrame;
             cv::Mat grayFrame;
@@ -214,6 +212,7 @@ namespace YACCP {
             (void) cam.start();
             (void) cam.start_recording(outputPath_ / "event_file.raw");
 
+            // TODO: Add master mode.
             camData_.runtimeData.isRunning = cam.is_running();
             while (cam.is_running() && !stopToken_.stop_requested()) {
                 cv::Mat localFrame;

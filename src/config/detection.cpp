@@ -8,6 +8,7 @@ namespace YACCP::Config {
         void parseDetectionConfig(const toml::table &tbl, DetectionConfig& config) {
             // [detection] configuration variables.
             const toml::node_view detection{tbl["detection"]};
+            if (const auto subTbl{detection.as_table()}; !subTbl) return;
 
             config.openCvDictionaryId = detection["charuco_dictionary"].value_or(8);
             config.detectionInterval = detection["detection_interval"].value_or(2);

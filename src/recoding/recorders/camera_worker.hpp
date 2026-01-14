@@ -2,16 +2,8 @@
 #define YACCP_RECORDING_RECORDERS_CAM_WORKER_HPP
 #include <filesystem>
 #include <mutex>
-#include <readerwriterqueue.h>
 
-#include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>
-
-#include <opencv2/core/mat.hpp>
 #include <opencv2/objdetect/aruco_detector.hpp>
-#include <opencv2/objdetect/aruco_dictionary.hpp>
-#include <opencv2/objdetect/charuco_detector.hpp>
-
 
 namespace YACCP {
     struct CamData;
@@ -22,6 +14,11 @@ namespace YACCP {
     enum class WorkerTypes {
         prophesee,
         basler,
+    };
+
+    inline std::unordered_map<std::string, WorkerTypes> workerTypesMap{
+        {"prophesee", WorkerTypes::prophesee},
+        {"basler", WorkerTypes::basler}
     };
 
     /**
@@ -40,7 +37,7 @@ namespace YACCP {
          * @param camId A user can give a specific camera ID to connect to.
          */
         CameraWorker(std::stop_source stopSource,
-                     std::vector<CamData> &camDatas,
+                     std::vector<CamData>& camDatas,
                      int fps,
                      int id,
                      std::filesystem::path outputPath,
@@ -61,8 +58,8 @@ namespace YACCP {
     protected:
         std::stop_source stopSource_;
         std::stop_token stopToken_;
-        std::vector<CamData> &camDatas_;
-        CamData &camData_;
+        std::vector<CamData>& camDatas_;
+        CamData& camData_;
         const int fps_;
         const int id_;
         std::filesystem::path outputPath_;

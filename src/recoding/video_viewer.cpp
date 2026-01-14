@@ -65,7 +65,7 @@ namespace YACCP {
                 cv::Mat grayFrame;
                 cv::cvtColor(localFrame, grayFrame, cv::COLOR_BGR2GRAY);
 
-                CharucoResults charucoResults{Utility::findBoard(charucoDetector_, grayFrame, 0)};
+                Utility::CharucoResults charucoResults{Utility::findBoard(charucoDetector_, grayFrame, 0)};
 
                 if (!charucoResults.markerIds.empty())
                     cv::aruco::drawDetectedMarkers(localFrame, charucoResults.markerCorners, charucoResults.markerIds);

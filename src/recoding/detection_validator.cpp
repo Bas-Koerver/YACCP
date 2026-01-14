@@ -79,7 +79,7 @@ namespace YACCP {
 
             cv::Mat grayFrame;
             cv::cvtColor(verifyTasks[0].frame, grayFrame, cv::COLOR_BGR2GRAY);
-            CharucoResults charucoResults{
+            Utility::CharucoResults charucoResults{
                 Utility::findBoard(charucoDetector_, grayFrame, std::floor(
                                        static_cast<float>(cornerAmount) * cornerMin_))
             };

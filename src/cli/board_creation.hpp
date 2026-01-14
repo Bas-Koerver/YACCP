@@ -5,10 +5,12 @@
 namespace YACCP::CLI {
     struct BoardCreationCmdConfig
     {
+        bool showAvailableJobs{};
+        std::string jobId{};
         int squareLength{100};
         int markerLength{70};
-        int border{0};
-        int borderPoints{1};
+        int marginSize{0};
+        int borderBits{1};
         bool generateImage{true};
         bool generateVideo{false};
     };

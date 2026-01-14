@@ -32,7 +32,7 @@ namespace YACCP {
             return;
         }
 
-        if (!ImageValidator::isNonEmptyDirectory(jobPath_ / "images" / "verified")) {
+        if (!Utility::isNonEmptyDirectory(jobPath_ / "images" / "verified")) {
             std::cerr << "No verified images found for job: " << jobName << "\n";
             return;
         }
@@ -117,7 +117,7 @@ namespace YACCP {
                                                                     camDatas[i].calibData.rvecs,
                                                                     camDatas[i].calibData.tvecs);
 
-            std::cout << "Calibration of cam: " << camDatas[i].camName << "ID: " << camDatas[i].camId << "done \n";
+            std::cout << "Calibration of cam: " << camDatas[i].camName << "ID: " << camDatas[i].camIndexId << "done \n";
 
 
 

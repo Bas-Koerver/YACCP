@@ -10,7 +10,7 @@
 
 namespace YACCP {
     void CreateBoard::generateVideo(const cv::Mat& image, cv::Size size, std::filesystem::path jobPath) {
-        const std::string filename = (jobPath / "charuco_board.mp4").string();
+        const std::string filename = (jobPath / "board.mp4").string();
         constexpr auto fps{60.0};
         const int codec{cv::VideoWriter::fourcc('a', 'v', 'c', '1')};
 
@@ -32,6 +32,22 @@ namespace YACCP {
         writer.release();
     }
 
+    void CreateBoard::listJobs(const std::filesystem::path& dataPath) {
+        std::cout << "jobs missing a board image and/or video: \n";
+        for (auto const& entry : std::filesystem::directory_iterator(dataPath)) {
+            if (!entry.is_directory()) continue;
+
+            std::filesystem::path rawPath = entry.path() / "images" / "raw";
+
+            bool jobDataFound{!(entry.path() / "job_data.json").empty()};
+            bool imageFound{!(entry.path() / "board.png").empty()};
+            bool videoFound{!(entry.path() / "video.mp4").empty()};
+            if (!jobDataFound || (imageFound && videoFound)) continue;
+
+            std::cout << "  " << entry.path().filename() << "\n";
+        }
+    }
+
     void CreateBoard::charuco(const Config::FileConfig& fileConfig,
                               const CLI::BoardCreationCmdConfig& boardCreationConfig,
                               const std::filesystem::path& jobPath) {
@@ -44,17 +60,17 @@ namespace YACCP {
         };
 
         const int width{
-            fileConfig.boardConfig.boardSize.width * boardCreationConfig.squareLength + 2 * boardCreationConfig.border
+            fileConfig.boardConfig.boardSize.width * boardCreationConfig.squareLength + 2 * boardCreationConfig.marginSize
         };
         const int height{
-            fileConfig.boardConfig.boardSize.height * boardCreationConfig.squareLength + 2 * boardCreationConfig.border
+            fileConfig.boardConfig.boardSize.height * boardCreationConfig.squareLength + 2 * boardCreationConfig.marginSize
         };
         cv::Mat boardImage;
         const cv::Size imageSize(width, height);
 
-        board.generateImage(imageSize, boardImage, boardCreationConfig.border, boardCreationConfig.borderPoints);
+        board.generateImage(imageSize, boardImage, boardCreationConfig.marginSize, boardCreationConfig.borderBits);
 
-        if (boardCreationConfig.generateImage) cv::imwrite((jobPath / "charuco_board.png").string(), boardImage);
+        if (boardCreationConfig.generateImage) cv::imwrite((jobPath / "board.png").string(), boardImage);
 
         if (boardCreationConfig.generateVideo) generateVideo(boardImage, imageSize, jobPath);
     }

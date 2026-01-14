@@ -1,42 +1,92 @@
 #ifndef YACCP_UTILITY_HPP
 #define YACCP_UTILITY_HPP
 
+#include <fstream>
+#include <iostream>
+
+#include <nlohmann/json.hpp>
+
 #include <opencv2/objdetect/charuco_detector.hpp>
 
-namespace YACCP {
+namespace YACCP::Utility {
+    struct AlternativeBuffer {
+        // "\x1b" Escape character
+        // "[?1049h" enables the alternative buffer
+        // "[?1049h" disables the alternative buffer
+        // "[2J" Clears entire screen
+        // "[1;1H" Moves cursor to the top-left corner
+
+        void enable() {
+            if (altBufferEnabled_) return;
+            altBufferEnabled_ = true;
+            std::cout << "\x1b[?1049h\x1b[2J\x1b[1;1H" << std::flush;
+        }
+
+        void disable() {
+            if (!altBufferEnabled_) return;
+            altBufferEnabled_ = false;
+            std::cout << "\x1b[?1049l" << std::flush;
+        }
+
+        ~AlternativeBuffer() { disable(); }
+
+    private:
+        bool altBufferEnabled_{false};
+    };
+
     struct CharucoResults {
         bool boardFound = false;
         std::vector<int> markerIds;
-        std::vector<std::vector<cv::Point2f> > markerCorners;
+        std::vector<std::vector<cv::Point2f>> markerCorners;
         std::vector<int> charucoIds;
         std::vector<cv::Point2f> charucoCorners;
     };
 
-    class Utility {
-    public:
-        template<typename T>
-        [[nodiscard]] static std::vector<T> intersection(std::vector<T> vec1, std::vector<T> vec2);
+    template <typename T>
+    [[nodiscard]] static std::vector<T> intersection(std::vector<T> vec1, std::vector<T> vec2);
 
-        [[nodiscard]] static CharucoResults findBoard(const cv::aruco::CharucoDetector &charucoDetector,
-                                                      const cv::Mat &gray,
-                                                      int cornerMin = 3);
-
-        [[nodiscard]] static std::_Timeobj<char, const tm*> getCurrentDateTime();
-    };
-
-    template<typename T>
-    std::vector<T> Utility::intersection(std::vector<T> vec1, std::vector<T> vec2) {
+    template <typename T>
+    std::vector<T> intersection(std::vector<T> vec1, std::vector<T> vec2) {
         std::vector<T> vecOutput;
 
         std::sort(vec1.begin(), vec1.end());
         std::sort(vec2.begin(), vec2.end());
 
-        std::set_intersection(vec1.begin(), vec1.end(),
-                              vec2.begin(), vec2.end(),
+        std::set_intersection(vec1.begin(),
+                              vec1.end(),
+                              vec2.begin(),
+                              vec2.end(),
                               std::back_inserter(vecOutput));
 
         return vecOutput;
     }
-}
+
+
+    void clearScreen();
+
+    [[nodiscard]] CharucoResults findBoard(const cv::aruco::CharucoDetector& charucoDetector,
+                                       const cv::Mat& gray,
+                                       int cornerMin = 3);
+
+    [[nodiscard]] std::_Timeobj<char, const tm*> getCurrentDateTime();
+
+    bool isNonEmptyDirectory(const std::filesystem::path& path);
+
+    [[nodiscard]] nlohmann::json loadJsonFromFile(std::ifstream& file);
+
+    [[nodiscard]] std::ifstream openFile(const std::filesystem::path& path, const std::string& fileName);
+
+    [[nodiscard]] nlohmann::json parseJsonFromFile(std::ifstream& file);
+
+
+
+
+
+
+
+
+
+} // YACCP::Utility
+
 
 #endif //YACCP_UTILITY_HPP

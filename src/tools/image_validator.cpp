@@ -1,7 +1,3 @@
-//
-// Created by Bas_K on 2025-12-20.
-//
-
 #include "image_validator.hpp"
 
 #include <fstream>
@@ -12,14 +8,11 @@
 #include <metavision/sdk/ui/utils/window.h>
 
 #include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>
+
+#include "../utility.hpp"
 
 namespace YACCP {
-    bool ImageValidator::isNonEmptyDirectory(const std::filesystem::path& path) {
-        return std::filesystem::exists(path) &&
-            std::filesystem::is_directory(path) &&
-            !std::filesystem::is_empty(path);
-    }
+
 
     void ImageValidator::updateSubimages(Metavision::FrameComposer& frameComposer,
                                          const std::vector<std::filesystem::path>& files,
@@ -42,10 +35,10 @@ namespace YACCP {
             std::filesystem::path verifiedPath = entry.path() / "images" / "verified";
 
             // Are there files in the verified folder?
-            if (isNonEmptyDirectory(verifiedPath)) continue;
+            if (Utility::isNonEmptyDirectory(verifiedPath)) continue;
 
             // Are there no files in the raw folder?
-            if (!isNonEmptyDirectory(rawPath)) continue;
+            if (!Utility::isNonEmptyDirectory(rawPath)) continue;
 
             std::cout << "  " << entry.path().filename() << "\n";
         }
@@ -57,7 +50,7 @@ namespace YACCP {
             std::filesystem::path verifiedPath = entry.path() / "images" / "verified";
 
             // Are there already files in the verified folder?
-            if (!isNonEmptyDirectory(verifiedPath)) continue;
+            if (!Utility::isNonEmptyDirectory(verifiedPath)) continue;
 
             std::cout << "  " << entry.path().filename() << "\n";
         }
@@ -73,7 +66,7 @@ namespace YACCP {
             return;
         }
 
-        if (!ImageValidator::isNonEmptyDirectory(jobPath_ / "images" / "raw")) {
+        if (!Utility::isNonEmptyDirectory(jobPath_ / "images" / "raw")) {
             std::cerr << "\nNo raw images found for job: " << jobId << "\n";
             return;
         }
@@ -133,6 +126,8 @@ namespace YACCP {
         double scaleX{static_cast<double>(resolutionWidth) / frameComposer.get_total_width()};
         double scaleY{static_cast<double>(resolutionHeight) / frameComposer.get_total_height()};
         double scale{std::min(scaleX, scaleY)};
+        Utility::AlternativeBuffer buffer;
+        buffer.enable();
 
         int width{(frameComposer.get_total_width())};
         int height{(frameComposer.get_total_height())};
@@ -173,6 +168,7 @@ namespace YACCP {
                             break;
                         case Metavision::UIKeyEvent::KEY_LEFT:
                             if (currentFileIndex_ <= 0) {
+                                Utility::clearScreen();
                                 std::cout << "Reached the beginning of the image set.\n Looping to end.\n\n";
                                 currentFileIndex_ = images.size() - 1;
                             } else {
@@ -183,6 +179,7 @@ namespace YACCP {
                             break;
                         case Metavision::UIKeyEvent::KEY_RIGHT:
                             if (currentFileIndex_ >= images.size() - 1) {
+                                Utility::clearScreen();
                                 std::cout << "Reached the end of the image set.\n Looping back to start.\n\n";
                                 currentFileIndex_ = 0;
                             } else {
@@ -227,7 +224,8 @@ namespace YACCP {
             }
         }
 
-        if (isNonEmptyDirectory(jobPath_ / "images" / "verified")) {
+        if (Utility::isNonEmptyDirectory(jobPath_ / "images" / "verified")) {
+            Utility::clearScreen();
             std::cout << "Verified directory already present, do you want to overwrite it? (y/n): ";
             char response;
             bool keepAsking{true};
@@ -246,7 +244,8 @@ namespace YACCP {
             if (response == 'y') {
                 std::filesystem::remove_all(jobPath_ / "images" / "verified");
             } else {
-                std::cout << "Aborting verification process to avoid overwriting existing data.\n";
+                buffer.disable();
+                std::cout << "Aborting verification process to avoid overwriting existing data.\n\n";
                 return;
             }
         }

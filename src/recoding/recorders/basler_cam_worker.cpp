@@ -243,6 +243,7 @@ namespace YACCP {
                     }
                 }
             } else {
+                // TODO: Add slave mode.
                 throw std::logic_error("Function not yet implemented");
             }
 
