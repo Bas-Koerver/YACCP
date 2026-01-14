@@ -97,8 +97,8 @@ int main(int argc, char** argv) {
     };
     cv::aruco::CharucoDetector charucoDetector(board, charucoParams, detParams);
     std::stop_source stopSource;
-    // auto numCams{static_cast<int>(fileConfig.recordingConfig.slaveWorkers.size() + 1)};
-    // std::vector<YACCP::CamData> camDatas(numCams);
+    auto numCams{static_cast<int>(fileConfig.recordingConfig.workers.size())};
+    std::vector<YACCP::CamData> camDatas(numCams);
     std::vector<std::jthread> threads;
     std::vector<std::unique_ptr<YACCP::CameraWorker>> cameraWorkers;
     moodycamel::ReaderWriterQueue<YACCP::ValidatedCornersData> valCornersQ{100};
@@ -142,139 +142,139 @@ int main(int argc, char** argv) {
     }
 
 
-    // if (*cliCmds.recordingCmd) {
-    //     if (cliCmdConfig.recordingCmdConfig.jobId.empty()) {
-    //         std::cout << "No job ID given, using most recent one.\n";
-    //         std::vector<std::filesystem::path> jobs;
-    //         for (const auto& entry : std::filesystem::directory_iterator(dataPath)) {
-    //             jobs.emplace_back(entry.path());
-    //         }
-    //         jobPath = jobs.back();
-    //         std::cout << jobPath << "\n\n";
-    //         // TODO: If most recent one already has data create new job and create new board.
-    //     } else {
-    //         jobPath = dataPath / cliCmdConfig.recordingCmdConfig.jobId;
-    //         if (!is_directory(jobPath)) {
-    //             std::cerr << "Job: " << jobPath.string() << " does not exist in the given path: " << dataPath << "\n";
-    //         }
-    //         // TODO: If given jobId already has data, ask user if he want's to override.
-    //     }
-    //
-    //     (void)std::filesystem::create_directories(jobPath / "images/raw");
-    //
-    //     for (int i = 0; i < numCams - 1; ++i) {
-    //         camDatas[i].info.isMaster = false;
-    //         camDatas[i].info.camIndexId = i;
-    //
-    //         switch (fileConfig.recordingConfig.slaveWorkers[i]) {
-    //         case YACCP::WorkerTypes::prophesee:
-    //             cameraWorkers.emplace_back(
-    //                 std::make_unique<YACCP::PropheseeCamWorker>(stopSource,
-    //                                                             camDatas,
-    //                                                             fileConfig.recordingConfig.fps,
-    //                                                             i,
-    //                                                             fileConfig.recordingConfig.prophesee.accumulationTime,
-    //                                                             1,
-    //                                                             jobPath));
-    //             break;
-    //
-    //         case YACCP::WorkerTypes::basler:
-    //             cameraWorkers.emplace_back(
-    //                 std::make_unique<YACCP::BaslerCamWorker>(stopSource,
-    //                                                          camDatas,
-    //                                                          fileConfig.recordingConfig.fps,
-    //                                                          i,
-    //                                                          jobPath));
-    //             break;
-    //         }
-    //
-    //         auto* worker = cameraWorkers.back().get();
-    //         threads.emplace_back([worker] { worker->start(); });
-    //
-    //         while (!camDatas[i].runtimeData.isRunning) {
-    //             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    //             if (stopSource.stop_requested()) {
-    //                 return getWorstStopCode(camDatas);
-    //             }
-    //         }
-    //     }
-    //
-    //     camDatas.back().info.isMaster = true;
-    //     camDatas.back().info.camIndexId = camDatas.size() - 1;
-    //     switch (fileConfig.recordingConfig.masterWorker) {
-    //     case YACCP::WorkerTypes::prophesee:
-    //         cameraWorkers.emplace_back(std::make_unique<YACCP::PropheseeCamWorker>(
-    //             stopSource,
-    //             camDatas,
-    //             fileConfig.recordingConfig.fps,
-    //             camDatas.size() - 1,
-    //             fileConfig.recordingConfig.prophesee.accumulationTime,
-    //             1,
-    //             jobPath));
-    //         break;
-    //
-    //     case YACCP::WorkerTypes::basler:
-    //         cameraWorkers.emplace_back(
-    //             std::make_unique<YACCP::BaslerCamWorker>(stopSource,
-    //                                                      camDatas,
-    //                                                      fileConfig.recordingConfig.fps,
-    //                                                      camDatas.size() - 1,
-    //                                                      jobPath));
-    //         break;
-    //     }
-    //
-    //     auto* worker = cameraWorkers.back().get();
-    //     threads.emplace_back([worker] { worker->start(); });
-    //
-    //     // Start the viewing thread.
-    //     while (!camDatas.back().runtimeData.isRunning) {
-    //         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    //         if (stopSource.stop_requested()) {
-    //             return getWorstStopCode(camDatas);
-    //         }
-    //     }
-    //
-    //     YACCP::VideoViewer videoViewer{
-    //         stopSource,
-    //         fileConfig.viewingConfig.viewsHorizontal,
-    //         mode->width - 100,
-    //         mode->height - 100,
-    //         camDatas,
-    //         charucoDetector,
-    //         valCornersQ,
-    //         jobPath,
-    //         fileConfig.detectionConfig.cornerMin,
-    //     };
-    //     threads.emplace_back(&YACCP::VideoViewer::start, &videoViewer);
-    //
-    //     YACCP::DetectionValidator detectionValidator{
-    //         stopSource,
-    //         camDatas,
-    //         charucoDetector,
-    //         valCornersQ,
-    //         jobPath,
-    //         fileConfig.detectionConfig.cornerMin
-    //     };
-    //     threads.emplace_back(&YACCP::DetectionValidator::start, &detectionValidator);
-    //
-    //     for (auto& thread : threads) {
-    //         thread.join();
-    //     }
-    //     // Create json object with camera data.
-    //     std::cout << "\nWriting job_data.json\n";
-    //     nlohmann::json j;
-    //     j["openCv"] = CV_VERSION;
-    //     j["config"] = fileConfig;
-    //     j["cams"] = nlohmann::json::object();
-    //
-    //     for (auto i{0}; i < camDatas.size(); ++i) {
-    //         j["cams"]["cam_" + std::to_string(i)] = camDatas[i].info;
-    //     }
-    //
-    //     // Save json to file.
-    //     std::ofstream file(jobPath / "job_data.json");
-    //     file << j.dump(4);
-    // }
+    if (*cliCmds.recordingCmd) {
+        if (cliCmdConfig.recordingCmdConfig.jobId.empty()) {
+            std::cout << "No job ID given, using most recent one.\n";
+            std::vector<std::filesystem::path> jobs;
+            for (const auto& entry : std::filesystem::directory_iterator(dataPath)) {
+                jobs.emplace_back(entry.path());
+            }
+            jobPath = jobs.back();
+            std::cout << jobPath << "\n\n";
+            // TODO: If most recent one already has data create new job and copy settings from the latest job.
+        } else {
+            jobPath = dataPath / cliCmdConfig.recordingCmdConfig.jobId;
+            if (!is_directory(jobPath)) {
+                std::cerr << "Job: " << jobPath.string() << " does not exist in the given path: " << dataPath << "\n";
+            }
+            // TODO: If given jobId already has data, ask user if he want's to overwrite the data.
+        }
+
+        (void)std::filesystem::create_directories(jobPath / "images/raw");
+
+        for (int i = 0; i < numCams - 1; ++i) {
+            camDatas[i].info.isMaster = false;
+            camDatas[i].info.camIndexId = i;
+
+            switch (fileConfig.recordingConfig.slaveWorkers[i]) {
+            case YACCP::WorkerTypes::prophesee:
+                cameraWorkers.emplace_back(
+                    std::make_unique<YACCP::PropheseeCamWorker>(stopSource,
+                                                                camDatas,
+                                                                fileConfig.recordingConfig.fps,
+                                                                i,
+                                                                fileConfig.recordingConfig.prophesee.accumulationTime,
+                                                                1,
+                                                                jobPath));
+                break;
+
+            case YACCP::WorkerTypes::basler:
+                cameraWorkers.emplace_back(
+                    std::make_unique<YACCP::BaslerCamWorker>(stopSource,
+                                                             camDatas,
+                                                             fileConfig.recordingConfig.fps,
+                                                             i,
+                                                             jobPath));
+                break;
+            }
+
+            auto* worker = cameraWorkers.back().get();
+            threads.emplace_back([worker] { worker->start(); });
+
+            while (!camDatas[i].runtimeData.isRunning) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                if (stopSource.stop_requested()) {
+                    return getWorstStopCode(camDatas);
+                }
+            }
+        }
+
+        camDatas.back().info.isMaster = true;
+        camDatas.back().info.camIndexId = camDatas.size() - 1;
+        switch (fileConfig.recordingConfig.masterWorker) {
+        case YACCP::WorkerTypes::prophesee:
+            cameraWorkers.emplace_back(std::make_unique<YACCP::PropheseeCamWorker>(
+                stopSource,
+                camDatas,
+                fileConfig.recordingConfig.fps,
+                camDatas.size() - 1,
+                fileConfig.recordingConfig.prophesee.accumulationTime,
+                1,
+                jobPath));
+            break;
+
+        case YACCP::WorkerTypes::basler:
+            cameraWorkers.emplace_back(
+                std::make_unique<YACCP::BaslerCamWorker>(stopSource,
+                                                         camDatas,
+                                                         fileConfig.recordingConfig.fps,
+                                                         camDatas.size() - 1,
+                                                         jobPath));
+            break;
+        }
+
+        auto* worker = cameraWorkers.back().get();
+        threads.emplace_back([worker] { worker->start(); });
+
+        // Start the viewing thread.
+        while (!camDatas.back().runtimeData.isRunning) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            if (stopSource.stop_requested()) {
+                return getWorstStopCode(camDatas);
+            }
+        }
+
+        YACCP::VideoViewer videoViewer{
+            stopSource,
+            fileConfig.viewingConfig.viewsHorizontal,
+            mode->width - 100,
+            mode->height - 100,
+            camDatas,
+            charucoDetector,
+            valCornersQ,
+            jobPath,
+            fileConfig.detectionConfig.cornerMin,
+        };
+        threads.emplace_back(&YACCP::VideoViewer::start, &videoViewer);
+
+        YACCP::DetectionValidator detectionValidator{
+            stopSource,
+            camDatas,
+            charucoDetector,
+            valCornersQ,
+            jobPath,
+            fileConfig.detectionConfig.cornerMin
+        };
+        threads.emplace_back(&YACCP::DetectionValidator::start, &detectionValidator);
+
+        for (auto& thread : threads) {
+            thread.join();
+        }
+        // Create json object with camera data.
+        std::cout << "\nWriting job_data.json\n";
+        nlohmann::json j;
+        j["openCv"] = CV_VERSION;
+        j["config"] = fileConfig;
+        j["cams"] = nlohmann::json::object();
+
+        for (auto i{0}; i < camDatas.size(); ++i) {
+            j["cams"]["cam_" + std::to_string(i)] = camDatas[i].info;
+        }
+
+        // Save json to file.
+        std::ofstream file(jobPath / "job_data.json");
+        file << j.dump(4);
+    }
 
 
     if (*cliCmds.validationCmd) {
