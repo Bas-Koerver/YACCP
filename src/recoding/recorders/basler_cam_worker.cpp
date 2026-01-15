@@ -161,12 +161,12 @@ namespace YACCP {
                     cam.Attach(TlFactory.CreateDevice(Pylon::CDeviceInfo().SetFullName(camId_.data())));
                     camData_.info.camName = cam.GetDeviceInfo().GetModelName();
                     std::cout << "Using Basler device: " << camData_.info.camName << "\n";
-                    camData_.runtimeData.isOpen = true;
+                    camData_.runtimeData.isOpen.store(true);
                 } else {
                     cam.Attach(TlFactory.CreateDevice(lstDevices[0]));
                     camData_.info.camName = cam.GetDeviceInfo().GetModelName();
                     std::cout << "Using Basler device: " << camData_.info.camName << "\n";
-                    camData_.runtimeData.isOpen = true;
+                    camData_.runtimeData.isOpen.store(true);
                 }
             }
         } catch (const GenICam::GenericException &e) {
@@ -177,7 +177,7 @@ namespace YACCP {
             return;
         }
 
-        if (camData_.runtimeData.isOpen) {
+        if (camData_.runtimeData.isOpen.load()) {
             cam.Open();
             GenApi::INodeMap &nodeMap = cam.GetNodeMap();
             auto [width, height] = getSetNodeMapParameters(nodeMap);
@@ -197,7 +197,7 @@ namespace YACCP {
 
             cam.StartGrabbing(Pylon::GrabStrategy_LatestImageOnly, Pylon::GrabLoop_ProvidedByInstantCamera);
 
-            camData_.runtimeData.isRunning = cam.IsGrabbing();
+            camData_.runtimeData.isRunning.store(cam.IsGrabbing());
 
             if (camData_.info.isMaster) {
                 requestedFrame_ = 1 + fps_ * detectionInterval_;

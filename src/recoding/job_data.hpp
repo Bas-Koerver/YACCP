@@ -239,8 +239,8 @@ namespace YACCP {
 
         struct RuntimeData {
             // Thread information
-            bool isOpen{false};
-            bool isRunning{false};
+            std::atomic<bool> isOpen{false};
+            std::atomic<bool> isRunning{false};
             int exitCode;
             cv::Mat frame;
             std::mutex m;

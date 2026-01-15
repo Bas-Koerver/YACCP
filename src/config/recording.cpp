@@ -1,8 +1,9 @@
 #include "recording.hpp"
+#include "orchestrator.hpp"
 
+#include <iostream>
 #include <stdexcept>
 
-#include "orchestrator.hpp"
 #include "../recoding/recorders/camera_worker.hpp"
 
 namespace YACCP::Config {
@@ -14,12 +15,16 @@ namespace YACCP::Config {
             throw std::runtime_error("Missing [recording] table");
 
         // Global [recording] variables.
-        config.fps = recordingTbl->get("fps")->value_or(30);
+        config.fps = (*recordingTbl)["fps"].value_or(30);
+        config.masterWorker = requireVariable<int>(*recordingTbl, "master_worker");
 
 
         const auto* workerArray{(*recordingTbl)["workers"].as_array()};
         if (!workerArray)
             throw std::runtime_error("Missing [[recording.workers]] array");
+
+        if (config.masterWorker > workerArray->size() || config.masterWorker < 0)
+            throw std::runtime_error("Invalid master worker index");
 
         config.workers.reserve(workerArray->size());
 
@@ -32,8 +37,8 @@ namespace YACCP::Config {
 
             const WorkerTypes type{stringToWorkerType(requireVariable<std::string>(*workerTbl, "type"))};
             worker.placement = requireVariable<int>(*workerTbl, "placement");
-            worker.masterWorker = workerTbl->get("masterWorker")->value_or(false);
-            worker.camUuid = workerTbl->get("camUuid")->value_or("");
+
+            worker.camUuid = (*workerTbl)["cam_uuid"].value_or("");
 
             switch (type) {
             case WorkerTypes::basler: {
@@ -42,8 +47,8 @@ namespace YACCP::Config {
             }
             case WorkerTypes::prophesee: {
                 Prophesee prophesee{};
-                prophesee.accumulationTime = workerTbl->get("accumulation_time")->value_or(33333);
-                prophesee.saveEventFile = workerTbl->get("save_event_file")->value_or(false);
+                prophesee.accumulationTime = (*workerTbl)["accumulation_time"].value_or(33333);
+                prophesee.saveEventFile = (*workerTbl)["save_event_file"].value_or(false);
                 worker.backend = prophesee;
                 break;
             }
@@ -57,83 +62,5 @@ namespace YACCP::Config {
         }
     }
 
-    //
-    // if (fpsOpt && !accumulationTimeOpt) {
-    //     config.fps = *fpsOpt;
-    //     config.prophesee.accumulationTime = static_cast<int>(std::floor(1. / config.fps * 1e6));
-    // } else if (!fpsOpt && accumulationTimeOpt) {
-    //     config.fps = static_cast<int>(std::floor(1e6 / *accumulationTimeOpt));
-    //     config.prophesee.accumulationTime = *accumulationTimeOpt;
-    // } else if (fpsOpt && accumulationTimeOpt) {
-    //     config.fps = *fpsOpt;
-    //     config.prophesee.accumulationTime = *accumulationTimeOpt;
-    // } else {
-    //     config.fps = 30;
-    //     config.prophesee.accumulationTime = static_cast<int>(std::floor(1. / 30 * 1e6));
-    // }
-    //
-    // if (const auto *slaveWorkerArray{recording["slave_workers"].as_array()}) {
-    //     numWorkers += slaveWorkerArray->size();
-    //     for (std::size_t i{0} ; i < slaveWorkerArray->size() ; ++i) {
-    //         const auto element{(*slaveWorkerArray)[i].value<std::string>()};
-    //
-    //         if (!element)
-    //             throw std::runtime_error("slave_worker[" + std::to_string(i) + "] must be a string");
-    //
-    //         config.slaveWorkers.emplace_back(stringToWorkerType(*element));
-    //     }
-    // }
-    //
-    // const auto &masterWorker {recording["master_worker"].as_string()};
-    // if (!masterWorker) throw std::runtime_error("Missing master worker");
-    //
-    // numWorkers += 1;
-    // config.masterWorker = stringToWorkerType(masterWorker->get());
-    //
-    // if (const auto *camPlacementArray{recording["cam_placement"].as_array()}) {
-    //     for (std::size_t i{0} ; i < camPlacementArray->size() ; ++i) {
-    //         const auto element{(*camPlacementArray)[i].value<int>()};
-    //
-    //         if (!element)
-    //             throw std::runtime_error("cam_placement[" + std::to_string(i) + "] must be an integer");
-    //
-    //         config.camPlacement.emplace_back(*element);
-    //     }
-    //
-    //     if (!camPlacementArray->size() == numWorkers)
-    //         throw std::runtime_error("Too many or too few indexes defined in recording.cam_placement");
-    // }
-    //
-    // const auto masterCameraOpt = recording["master_camera"].value<int>();
-    // if (!masterCameraOpt)
-    //     throw std::runtime_error("recording.master_camera is required");
-    // config.masterCamera = *masterCameraOpt;
-    //
-    // // [prophesee] worker
-    // const toml::node_view prophesee{recording["workers"]["prophesee"]};
-    // config.prophesee.saveEventFile = prophesee["save_eventfile"].value_or(false);
-    //
-    // if (const auto *camUuidArray{prophesee["cam_uuid"].as_array()}) {
-    //     for (std::size_t i{0} ; i < camUuidArray->size() ; ++i) {
-    //         const auto element{(*camUuidArray)[i].value<std::string>()};
-    //
-    //         if (!element)
-    //             throw std::runtime_error("prophesee.cam_uuid[" + std::to_string(i) + "] must be a string");
-    //
-    //         config.prophesee.camUuid.emplace_back(*element);
-    //     }
-    // }
-    //
-    // // [basler] worker
-    // const toml::node_view basler{recording["workers"]["basler"]};
-    // if (const auto *camUuidArray{basler["cam_uuid"].as_array()}) {
-    //     for (std::size_t i{0} ; i < camUuidArray->size() ; ++i) {
-    //         const auto element{(*camUuidArray)[i].value<std::string>()};
-    //
-    //         if (!element)
-    //             throw std::runtime_error("prophesee.cam_uuid[" + std::to_string(i) + "] must be a string");
-    //
-    //         config.basler.camUuid.emplace_back(*element);
-    //     }
-    // }
+
 } // YACCP::Config

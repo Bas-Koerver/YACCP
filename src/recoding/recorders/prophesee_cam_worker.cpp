@@ -111,7 +111,7 @@ namespace YACCP {
             try {
                 // open the first available camera
                 cam = Metavision::Camera::from_first_available();
-                camData_.runtimeData.isOpen = true;
+                camData_.runtimeData.isOpen.store(true);
             } catch (Metavision::CameraException &e) {
                 std::cerr << e.what() << "\n";
                 camData_.runtimeData.exitCode = 2;
@@ -122,7 +122,7 @@ namespace YACCP {
             try {
                 // open the first available camera
                 cam = Metavision::Camera::from_serial(camId_);
-                camData_.runtimeData.isOpen = true;
+                camData_.runtimeData.isOpen.store(true);
             } catch (Metavision::CameraException &e) {
                 std::cerr << e.what() << "\n";
                 camData_.runtimeData.exitCode = 2;
@@ -133,7 +133,7 @@ namespace YACCP {
 
         printCurrentDevice(cam, camData_);
 
-        if (camData_.runtimeData.isOpen) {
+        if (camData_.runtimeData.isOpen.load()) {
             // TODO: add runtime error handling
             cv::Mat cdFrame;
             cv::Mat grayFrame;
@@ -213,7 +213,7 @@ namespace YACCP {
             (void) cam.start_recording(outputPath_ / "event_file.raw");
 
             // TODO: Add master mode.
-            camData_.runtimeData.isRunning = cam.is_running();
+            camData_.runtimeData.isRunning.store(cam.is_running());
             while (cam.is_running() && !stopToken_.stop_requested()) {
                 cv::Mat localFrame;
                 {

@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     auto numCams{static_cast<int>(fileConfig.recordingConfig.workers.size())};
     std::vector<YACCP::CamData> camDatas(numCams);
     std::vector<std::jthread> threads;
-    std::vector<std::unique_ptr<YACCP::CameraWorker>> cameraWorkers;
+    std::vector<std::unique_ptr<YACCP::CameraWorker>> cameraWorkers(numCams);
     moodycamel::ReaderWriterQueue<YACCP::ValidatedCornersData> valCornersQ{100};
     std::map<std::string, YACCP::WorkerTypes>{
         {"PropheseeDVS", YACCP::WorkerTypes::prophesee},
@@ -119,7 +119,8 @@ int main(int argc, char** argv) {
             std::cout << "No job ID given, creating new one.\n";
             jobPath = dataPath / ("job_" + dateTime.str());
             std::filesystem::create_directories(jobPath);
-        } else { // Otherwise generate a board for the given job ID
+        } else {
+            // Otherwise generate a board for the given job ID
             jobPath = dataPath / cliCmdConfig.boardCreationCmdConfig.jobId;
             if (!is_directory(jobPath)) {
                 std::cerr << "Job: " << jobPath.string() << " does not exist in the given path: " << dataPath << "\n";
@@ -142,7 +143,7 @@ int main(int argc, char** argv) {
     }
 
 
-    if (*cliCmds.recordingCmd) {
+    if (*cliCmds.recordingCmd || true) {
         if (cliCmdConfig.recordingCmdConfig.jobId.empty()) {
             std::cout << "No job ID given, using most recent one.\n";
             std::vector<std::filesystem::path> jobs;
@@ -162,72 +163,65 @@ int main(int argc, char** argv) {
 
         (void)std::filesystem::create_directories(jobPath / "images/raw");
 
-        for (int i = 0; i < numCams - 1; ++i) {
-            camDatas[i].info.isMaster = false;
-            camDatas[i].info.camIndexId = i;
+        for (auto i{0}; i < numCams; ++i) {
+            const int index{fileConfig.recordingConfig.workers[i].placement};
+            camDatas[index].info.camIndexId = index;
+            camDatas[index].info.isMaster = index == fileConfig.recordingConfig.masterWorker;
 
-            switch (fileConfig.recordingConfig.slaveWorkers[i]) {
-            case YACCP::WorkerTypes::prophesee:
-                cameraWorkers.emplace_back(
-                    std::make_unique<YACCP::PropheseeCamWorker>(stopSource,
-                                                                camDatas,
-                                                                fileConfig.recordingConfig.fps,
-                                                                i,
-                                                                fileConfig.recordingConfig.prophesee.accumulationTime,
-                                                                1,
-                                                                jobPath));
-                break;
+            std::visit([&](const auto& backend) {
+                           using T = std::decay_t<decltype(backend)>;
 
-            case YACCP::WorkerTypes::basler:
-                cameraWorkers.emplace_back(
-                    std::make_unique<YACCP::BaslerCamWorker>(stopSource,
-                                                             camDatas,
-                                                             fileConfig.recordingConfig.fps,
-                                                             i,
-                                                             jobPath));
-                break;
+                           if constexpr (std::is_same_v<T, YACCP::Config::Basler>) {
+                               cameraWorkers[index] =
+                                   std::make_unique<YACCP::BaslerCamWorker>(stopSource,
+                                                                            camDatas,
+                                                                            fileConfig.recordingConfig.fps,
+                                                                            index,
+                                                                            jobPath);
+                           } else if constexpr (std::is_same_v<T, YACCP::Config::Prophesee>) {
+                               cameraWorkers[index] =
+                                   std::make_unique<YACCP::PropheseeCamWorker>(stopSource,
+                                                                               camDatas,
+                                                                               fileConfig.recordingConfig.fps,
+                                                                               index,
+                                                                               backend.accumulationTime,
+                                                                               1,
+                                                                               jobPath);
+                           }
+                       },
+                       fileConfig.recordingConfig.workers[i].backend);
+
+            if (camDatas[index].info.isMaster) continue;
+            auto* worker = cameraWorkers[index].get();
+            threads.emplace_back([worker] { worker->start(); });
+        }
+
+        // Wait till all slave cameras have started
+        auto allSlavesRunning{false};
+        while (!allSlavesRunning) {
+            if (stopSource.stop_requested()) {
+                return getWorstStopCode(camDatas);
             }
 
-            auto* worker = cameraWorkers.back().get();
-            threads.emplace_back([worker] { worker->start(); });
-
-            while (!camDatas[i].runtimeData.isRunning) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                if (stopSource.stop_requested()) {
-                    return getWorstStopCode(camDatas);
+            allSlavesRunning = true;
+            for (auto i{0}; i < numCams; ++i) {
+                if (camDatas[i].info.isMaster) continue;
+                if (camDatas[i].runtimeData.isRunning.load()) {
+                    allSlavesRunning = false;
+                    break;
                 }
             }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
-        camDatas.back().info.isMaster = true;
-        camDatas.back().info.camIndexId = camDatas.size() - 1;
-        switch (fileConfig.recordingConfig.masterWorker) {
-        case YACCP::WorkerTypes::prophesee:
-            cameraWorkers.emplace_back(std::make_unique<YACCP::PropheseeCamWorker>(
-                stopSource,
-                camDatas,
-                fileConfig.recordingConfig.fps,
-                camDatas.size() - 1,
-                fileConfig.recordingConfig.prophesee.accumulationTime,
-                1,
-                jobPath));
-            break;
-
-        case YACCP::WorkerTypes::basler:
-            cameraWorkers.emplace_back(
-                std::make_unique<YACCP::BaslerCamWorker>(stopSource,
-                                                         camDatas,
-                                                         fileConfig.recordingConfig.fps,
-                                                         camDatas.size() - 1,
-                                                         jobPath));
-            break;
+        {
+            auto* worker = cameraWorkers[fileConfig.recordingConfig.masterWorker].get();
+            threads.emplace_back([worker] { worker->start(); });
         }
-
-        auto* worker = cameraWorkers.back().get();
-        threads.emplace_back([worker] { worker->start(); });
 
         // Start the viewing thread.
-        while (!camDatas.back().runtimeData.isRunning) {
+        while (!camDatas[fileConfig.recordingConfig.masterWorker].runtimeData.isRunning.load()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             if (stopSource.stop_requested()) {
                 return getWorstStopCode(camDatas);
@@ -302,3 +296,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+

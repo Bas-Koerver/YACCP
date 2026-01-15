@@ -22,13 +22,13 @@ namespace YACCP::Config {
     struct RecordingConfig {
         struct Worker {
             int placement{};
-            bool masterWorker{};
             std::string camUuid{};
 
             Backend backend;
         };
 
         int fps{};
+        int masterWorker{};
         std::vector<Worker> workers{};
     };
 
@@ -51,7 +51,6 @@ namespace YACCP::Config {
     inline void to_json(nlohmann::json& j, const RecordingConfig::Worker& w) {
         j = {
             {"placement", w.placement},
-            {"masterWorker", w.masterWorker},
             {"camUuid", w.camUuid}
         };
 
@@ -70,7 +69,6 @@ namespace YACCP::Config {
 
     inline void from_json(const nlohmann::json& j, RecordingConfig::Worker& w) {
         j.at("placement").get_to(w.placement);
-        j.at("masterWorker").get_to(w.masterWorker);
         j.at("camUuid").get_to(w.camUuid);
 
         // Discriminator
@@ -91,6 +89,7 @@ namespace YACCP::Config {
     inline void to_json(nlohmann::json& j, const RecordingConfig& r) {
         j = {
             {"fps", r.fps},
+            {"masterWorker", r.masterWorker},
             {"workers", r.workers},
         };
     }
