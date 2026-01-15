@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
         for (auto i{0}; i < numCams; ++i) {
             const int index{fileConfig.recordingConfig.workers[i].placement};
             camDatas[index].info.camIndexId = index;
-            camDatas[index].info.isMaster = index == fileConfig.recordingConfig.masterWorker;
+            camDatas[index].info.isMaster = fileConfig.recordingConfig.masterWorker;
 
             std::visit([&](const auto& backend) {
                            using T = std::decay_t<decltype(backend)>;
@@ -200,13 +200,14 @@ int main(int argc, char** argv) {
         auto allSlavesRunning{false};
         while (!allSlavesRunning) {
             if (stopSource.stop_requested()) {
+                // TODO: Only one return
                 return getWorstStopCode(camDatas);
             }
 
             allSlavesRunning = true;
             for (auto i{0}; i < numCams; ++i) {
                 if (camDatas[i].info.isMaster) continue;
-                if (camDatas[i].runtimeData.isRunning.load()) {
+                if (!camDatas[i].runtimeData.isRunning.load()) {
                     allSlavesRunning = false;
                     break;
                 }
@@ -215,12 +216,14 @@ int main(int argc, char** argv) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
+        // Start the master camera
         {
             auto* worker = cameraWorkers[fileConfig.recordingConfig.masterWorker].get();
             threads.emplace_back([worker] { worker->start(); });
         }
 
-        // Start the viewing thread.
+        // Before the videoViewer can be started, the master camera needs to be running first,
+        // wait until this is true.
         while (!camDatas[fileConfig.recordingConfig.masterWorker].runtimeData.isRunning.load()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             if (stopSource.stop_requested()) {
@@ -228,6 +231,7 @@ int main(int argc, char** argv) {
             }
         }
 
+        // Start the videoViwer
         YACCP::VideoViewer videoViewer{
             stopSource,
             fileConfig.viewingConfig.viewsHorizontal,
@@ -241,6 +245,7 @@ int main(int argc, char** argv) {
         };
         threads.emplace_back(&YACCP::VideoViewer::start, &videoViewer);
 
+        // Start the detectionValidator
         YACCP::DetectionValidator detectionValidator{
             stopSource,
             camDatas,
@@ -251,10 +256,13 @@ int main(int argc, char** argv) {
         };
         threads.emplace_back(&YACCP::DetectionValidator::start, &detectionValidator);
 
+        // Join all threads when they've finished executing.
         for (auto& thread : threads) {
             thread.join();
         }
-        // Create json object with camera data.
+
+        // Create json object with all information on this job,
+        // that includes the configured parameters in the config.toml and information about the job itself.
         std::cout << "\nWriting job_data.json\n";
         nlohmann::json j;
         j["openCv"] = CV_VERSION;
@@ -265,7 +273,7 @@ int main(int argc, char** argv) {
             j["cams"]["cam_" + std::to_string(i)] = camDatas[i].info;
         }
 
-        // Save json to file.
+        // Save json to a file.
         std::ofstream file(jobPath / "job_data.json");
         file << j.dump(4);
     }
