@@ -11,19 +11,17 @@
 
 namespace YACCP {
     CameraWorker::CameraWorker(std::stop_source stopSource,
-                               std::vector<CamData> &camDatas,
-                               const int fps,
-                               const int id,
-                               std::filesystem::path outputPath,
-                               std::string camId)
+                               std::vector<CamData>& camDatas,
+                               Config::RecordingConfig& recordingConfig,
+                               const int index,
+                               std::filesystem::path jobPath)
         : stopSource_(stopSource),
           stopToken_(stopSource.get_token()),
           camDatas_(camDatas),
-          camData_(camDatas.at(id)),
-          fps_(fps),
-          id_(id),
-          outputPath_(std::move(outputPath)),
-          camId_(std::move(camId)) {
+          camData_(camDatas.at(index)),
+          recordingConfig_(recordingConfig),
+          index_(index),
+          jobPath_(std::move(jobPath)) {
     }
 
     void CameraWorker::listAvailableSources() {

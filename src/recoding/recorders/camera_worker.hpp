@@ -4,6 +4,7 @@
 #include <mutex>
 
 #include <opencv2/objdetect/aruco_detector.hpp>
+#include "../../config/recording.hpp"
 
 namespace YACCP {
     struct CamData;
@@ -31,17 +32,15 @@ namespace YACCP {
          *
          * @param stopSource Stop source to control the program execution.
          * @param camDatas Reference to the camera data struct.
-         * @param fps Frames per second to capture at.
-         * @param id ID of the camera worker this must be the index of the correct CamData from camDatas.
-         * @param outputPath
-         * @param camId A user can give a specific camera ID to connect to.
+         * @param recordingConfig Frames per second to capture at.
+         * @param index ID of the camera worker this must be the index of the correct CamData from camDatas.
+         * @param jobPath
          */
         CameraWorker(std::stop_source stopSource,
                      std::vector<CamData>& camDatas,
-                     int fps,
-                     int id,
-                     std::filesystem::path outputPath,
-                     std::string camId = {});
+                     Config::RecordingConfig& recordingConfig,
+                     int index,
+                     std::filesystem::path jobPath);
 
         /**
          * @brief Function to list available camera sources.
@@ -60,11 +59,9 @@ namespace YACCP {
         std::stop_token stopToken_;
         std::vector<CamData>& camDatas_;
         CamData& camData_;
-        const int fps_;
-        const int id_;
-        std::filesystem::path outputPath_;
-        // A user can give a specific camera ID to connect to.
-        std::string camId_;
+        Config::RecordingConfig& recordingConfig_;
+        const int index_;
+        std::filesystem::path jobPath_;
     };
 } // YACCP
 

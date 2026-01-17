@@ -10,22 +10,19 @@ namespace YACCP {
     public:
         PropheseeCamWorker(std::stop_source stopSource,
                            std::vector<CamData> &camDatas,
-                           int fps,
-                           int id,
-                           int accumulationTime,
-                           int fallingEdgePolarity,
-                           const std::filesystem::path &outputPath,
-                           std::string camId = {});
+                           Config::RecordingConfig &recordingConfig,
+                           const Config::Prophesee& configBackend,
+                           int index,
+                           const std::filesystem::path &jobPath);
 
         void listAvailableSources() override;
 
         void start() override;
 
     private:
-        const std::uint16_t accumulationTime_;
+        const Config::Prophesee& configBackend_;
         int requestedFrame_{-1};
-        int frameIndex_{};
-        int fallingEdgePolarity_{};
+        int frameIndex_{};;
     };
 } // YACCP
 #endif //YACCP_RECORDING_RECORDERS_PROPHESEE_CAM_WORKER_HPP

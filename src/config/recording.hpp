@@ -1,5 +1,6 @@
 #ifndef YACCP_CONFIG_RECORDING_HPP
 #define YACCP_CONFIG_RECORDING_HPP
+#include <iostream>
 #include <variant>
 #include <toml++/toml.hpp>
 #include <nlohmann/json.hpp>
@@ -15,16 +16,17 @@ namespace YACCP::Config {
     struct Prophesee {
         int accumulationTime{};
         bool saveEventFile{};
+        int fallingEdgePolarity{};
     };
 
-    using Backend = std::variant<Basler, Prophesee>;
+    using ConfigBackend = std::variant<Basler, Prophesee>;
 
     struct RecordingConfig {
         struct Worker {
             int placement{};
             std::string camUuid{};
 
-            Backend backend;
+            ConfigBackend configBackend;
         };
 
         int fps{};
@@ -36,15 +38,18 @@ namespace YACCP::Config {
 
     void parseRecordingConfig(const toml::table& tbl, RecordingConfig& config);
 
+    // Logic for loading config structs to JSON and loading it from a JSON back to the appropriate structs.
     inline void to_json(nlohmann::json& j, const Prophesee& p) {
         j = {
             {"accumulationTime", p.accumulationTime},
-            {"saveEventFile", p.saveEventFile},
+            {"fallingEdgePolarity", p.fallingEdgePolarity},
+            {"saveEventFile", p.saveEventFile}
         };
     }
 
     inline void from_json(const nlohmann::json& j, Prophesee& p) {
         j.at("accumulationTime").get_to(p.accumulationTime);
+        j.at("fallingEdgePolarity").get_to(p.fallingEdgePolarity);
         j.at("saveEventFile").get_to(p.saveEventFile);
     }
 
@@ -61,10 +66,10 @@ namespace YACCP::Config {
                 j["type"] = "basler";
             } else if constexpr (std::is_same_v<T, Prophesee>) {
                 j["type"] = "prophesee";
-                nlohmann::json bj{workerBackend};
-                j.update(bj);
+                    nlohmann::json bj(workerBackend);
+                    j.update(bj);
             }
-        }, w.backend);
+        }, w.configBackend);
     }
 
     inline void from_json(const nlohmann::json& j, RecordingConfig::Worker& w) {
@@ -76,7 +81,7 @@ namespace YACCP::Config {
 
         // Backend
         if (type == "basler") {
-            w.backend = Basler{};
+            w.configBackend = Basler{};
         } else if (type == "prophesee") {
             Prophesee p{};
             j.at("accumulationTime").get_to(p.accumulationTime);

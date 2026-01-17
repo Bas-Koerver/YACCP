@@ -62,6 +62,7 @@ add_executable(
         src/config/orchestrator.cpp src/config/orchestrator.hpp
         src/cli/orchestrator.cpp
         src/cli/orchestrator.hpp
+        src/defaults.hpp
 )
 
 target_link_libraries(

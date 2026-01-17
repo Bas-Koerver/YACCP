@@ -15,11 +15,15 @@ namespace YACCP::Config {
         ViewingConfig viewingConfig;
     };
 
-    template <class T>
-    [[nodiscard]] T requireVariable(const toml::table &tbl, std::string_view key) {
+    template <typename T>
+    [[nodiscard]] T requireVariable(const toml::table &tbl, std::string_view key, std::string_view keyPath = {}) {
         if (auto value = tbl[key].value<T>())
             return *value;
-        throw std::runtime_error("Variable: " + std::string(key) + " missing or invalid");
+
+        if (keyPath.empty())
+            throw std::runtime_error("Variable: " + std::string(key) + " is missing or invalid");
+
+        throw std::runtime_error("Variable: " + std::string(key) + " at [" + std::string(keyPath) + "] is missing or invalid");
     }
 
     WorkerTypes stringToWorkerType(const std::string& worker);

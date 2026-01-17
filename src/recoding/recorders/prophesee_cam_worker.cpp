@@ -16,6 +16,7 @@
 
 #include "../detection_validator.hpp"
 #include "../job_data.hpp"
+#include "../../config/recording.hpp"
 
 
 namespace YACCP {
@@ -68,15 +69,11 @@ namespace YACCP {
 
     PropheseeCamWorker::PropheseeCamWorker(std::stop_source stopSource,
                                            std::vector<CamData> &camDatas,
-                                           const int fps,
-                                           const int id,
-                                           const int accumulationTime,
-                                           const int fallingEdgePolarity,
-                                           const std::filesystem::path &outputPath,
-                                           const std::string camId)
-        : CameraWorker(stopSource, camDatas, fps, id, outputPath, std::move(camId)),
-          accumulationTime_(accumulationTime),
-          fallingEdgePolarity_(fallingEdgePolarity) {
+                                           Config::RecordingConfig &recordingConfig,
+                                           const Config::Prophesee& configBackend,
+                                           int index,
+                                           const std::filesystem::path &jobPath)
+        : CameraWorker(stopSource, camDatas, recordingConfig, index, jobPath), configBackend_(configBackend) {
     }
 
     void PropheseeCamWorker::listAvailableSources() {
@@ -107,7 +104,7 @@ namespace YACCP {
     void PropheseeCamWorker::start() {
         Metavision::Camera cam;
 
-        if (camId_.empty()) {
+        if (recordingConfig_.workers[index_].camUuid.empty()) {
             try {
                 // open the first available camera
                 cam = Metavision::Camera::from_first_available();
@@ -121,7 +118,7 @@ namespace YACCP {
         } else {
             try {
                 // open the first available camera
-                cam = Metavision::Camera::from_serial(camId_);
+                cam = Metavision::Camera::from_serial(recordingConfig_.workers[index_].camUuid);
                 camData_.runtimeData.isOpen.store(true);
             } catch (Metavision::CameraException &e) {
                 std::cerr << e.what() << "\n";
@@ -150,18 +147,18 @@ namespace YACCP {
             configureFacilities(cam);
 
             Metavision::CDFrameGenerator cdFrameGenerator{geometry.get_width(), geometry.get_height()};
-            cdFrameGenerator.set_display_accumulation_time_us(accumulationTime_);
+            cdFrameGenerator.set_display_accumulation_time_us(configBackend_.accumulationTime);
 
 
             Metavision::OnDemandFrameGenerationAlgorithm onDemandFrameGenerator{
                 geometry.get_width(),
                 geometry.get_height(),
-                static_cast<uint32_t>(std::round(1e6 / static_cast<double>(fps_)))
+                static_cast<uint32_t>(std::round(1e6 / static_cast<double>(recordingConfig_.fps)))
             };
 
 
             (void) cdFrameGenerator.start(
-                fps_,
+                recordingConfig_.fps,
                 [&cd_frame_mutex, &cdFrame, &cd_frame_ts](const Metavision::timestamp &ts, const cv::Mat &frame) {
                     std::unique_lock<std::mutex> lock(cd_frame_mutex);
                     cd_frame_ts = ts;
@@ -177,7 +174,7 @@ namespace YACCP {
 
                     for (auto ev = begin; ev != end; ++ev) {
                         // Check for falling edge trigger and increment frame index.
-                        if (ev->p == fallingEdgePolarity_) {
+                        if (ev->p == configBackend_.fallingEdgePolarity) {
                             // Handle falling edge trigger event
                             ++frameIndex_;
                         }
@@ -210,7 +207,7 @@ namespace YACCP {
 
             // TODO: Make event file recording optional.
             (void) cam.start();
-            (void) cam.start_recording(outputPath_ / "event_file.raw");
+            (void) cam.start_recording(jobPath_ / "event_file.raw");
 
             // TODO: Add master mode.
             camData_.runtimeData.isRunning.store(cam.is_running());

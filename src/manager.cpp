@@ -1,5 +1,5 @@
 #define NOMINMAX
-#include "cli/orchestrator.hpp"
+
 #ifdef NDEBUG
 #include <opencv2/core/utils/logger.hpp>
 #endif
@@ -13,6 +13,7 @@
 #include "camera_calibration.hpp"
 #include "utility.hpp"
 
+#include "cli/orchestrator.hpp"
 #include "cli/board_creation.hpp"
 #include "cli/calibration.hpp"
 #include "cli/recording.hpp"
@@ -80,6 +81,7 @@ int main(int argc, char** argv) {
         YACCP::Config::loadConfig(fileConfig, path);
     } catch (const std::exception& err) {
         std::cerr << err.what() << std::endl;
+        // TODO: Single return statement.
         return 1;
     }
 
@@ -166,7 +168,7 @@ int main(int argc, char** argv) {
         for (auto i{0}; i < numCams; ++i) {
             const int index{fileConfig.recordingConfig.workers[i].placement};
             camDatas[index].info.camIndexId = index;
-            camDatas[index].info.isMaster = fileConfig.recordingConfig.masterWorker;
+            camDatas[index].info.isMaster = index == fileConfig.recordingConfig.masterWorker;
 
             std::visit([&](const auto& backend) {
                            using T = std::decay_t<decltype(backend)>;
@@ -175,21 +177,21 @@ int main(int argc, char** argv) {
                                cameraWorkers[index] =
                                    std::make_unique<YACCP::BaslerCamWorker>(stopSource,
                                                                             camDatas,
-                                                                            fileConfig.recordingConfig.fps,
+                                                                            fileConfig.recordingConfig,
+                                                                            backend,
                                                                             index,
                                                                             jobPath);
                            } else if constexpr (std::is_same_v<T, YACCP::Config::Prophesee>) {
                                cameraWorkers[index] =
                                    std::make_unique<YACCP::PropheseeCamWorker>(stopSource,
                                                                                camDatas,
-                                                                               fileConfig.recordingConfig.fps,
+                                                                               fileConfig.recordingConfig,
+                                                                               backend,
                                                                                index,
-                                                                               backend.accumulationTime,
-                                                                               1,
                                                                                jobPath);
                            }
                        },
-                       fileConfig.recordingConfig.workers[i].backend);
+                       fileConfig.recordingConfig.workers[i].configBackend);
 
             if (camDatas[index].info.isMaster) continue;
             auto* worker = cameraWorkers[index].get();
@@ -288,19 +290,24 @@ int main(int argc, char** argv) {
                                       dataPath,
                                       cliCmdConfig.validationCmdConfig.jobId);
     }
-    //
-    // if (*calibrationCmd.calibration) {
-    //     // TODO: Add calibration
-    //     // TODO: Maybe add customisations like epsilon value, iter count, CALIB_FIX_FOCALLENGTH
-    //     YACCP::CameraCalibration calibration(charucoDetector, path, fileConfig.detectionConfig.cornerMin);
-    //     //
-    //     // calibration.monoCalibrate("job_2025-12-28_18-54-04");
-    //     //
-    //     // return 0;
-    //     if (*calibrationCmd.mono) {
-    //     } else if (*calibrationCmd.stereo) {
-    //     }
-    // }
+
+    if (*cliCmds.calibrationCmds.calibration) {
+        std::cout << "calibration called\n";
+        // TODO: Add calibration
+        // TODO: Maybe add customisations like epsilon value, iter count, CALIB_FIX_FOCALLENGTH
+        YACCP::CameraCalibration calibration(charucoDetector, path, fileConfig.detectionConfig.cornerMin);
+        //
+        // calibration.monoCalibrate("job_2025-12-28_18-54-04");
+        //
+        // return 0;
+        if (*cliCmds.calibrationCmds.mono) {
+            std::cout << "mono calibration called\n";
+        } else if (*cliCmds.calibrationCmds.stereo) {
+            std::cout << "stereo calibration called\n";
+        } else {
+            std::cout << "base calibration called\n";
+        }
+    }
 
     return 0;
 }
