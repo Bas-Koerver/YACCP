@@ -136,6 +136,7 @@ namespace YACCP::Calibration {
                                  const std::filesystem::path& jobPath) {
         std::vector<std::filesystem::path> cams;
         std::vector<std::filesystem::path> files;
+        stereoCalibDatas.clear();
 
         // Get all camera directories in the given job path.
         getCamDirs(cams, camDatas, jobPath);

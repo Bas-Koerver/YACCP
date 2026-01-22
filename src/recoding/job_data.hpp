@@ -251,7 +251,7 @@ namespace YACCP {
         s.rotationMatrix = matFrom2dArray(j.at("rotationMatrix"));
         s.translationMatrix = matFrom1dArray(j.at("translationMatrix"));
         s.essentialMatrix = matFrom2dArray(j.at("essentialMatrix"));
-        s.essentialMatrix = matFrom2dArray(j.at("essentialMatrix"));
+        s.fundamentalMatrix = matFrom2dArray(j.at("fundamentalMatrix"));
     }
 }
 

@@ -32,6 +32,13 @@ namespace YACCP::Executor {
         }
 
         std::vector<StereoCalibData> stereoCalibDatas;
+        if (j.contains("stereoCalib")) {
+            for (auto& [key, obj] : j.at("stereoCalib").items()) {
+                auto stereoCalibData = obj.get<StereoCalibData>();
+                stereoCalibDatas.emplace_back(stereoCalibData);
+            }
+        }
+
 
         // Variable setup based on config.
         cv::aruco::Dictionary dictionary{
