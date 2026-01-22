@@ -3,15 +3,8 @@
 #include "job_data.hpp"
 #include "../utility.hpp"
 
-// #include <fstream>
-// #include <numeric>
-// #include <vector>
-
 #include <metavision/sdk/ui/utils/event_loop.h>
 #include <metavision/sdk/ui/utils/window.h>
-
-// #include <nlohmann/json.hpp>
-
 
 cv::Scalar getColourGradient(int index, int maxIndex) {
     const double ratio{255.0 / (static_cast<double>(maxIndex) / 2.0)};
@@ -124,8 +117,8 @@ namespace YACCP {
 
     std::vector<cv::Point> VideoViewer::correctCoordinates(const ValidatedCornersData& validatedCornersData) {
         cv::Point2f offset{
-            static_cast<float>(camDatas_[validatedCornersData.camId].info.camViewData.windowX),
-            static_cast<float>(camDatas_[validatedCornersData.camId].info.camViewData.windowY)
+            static_cast<float>(camDatas_[validatedCornersData.camId].info.ViewData.windowX),
+            static_cast<float>(camDatas_[validatedCornersData.camId].info.ViewData.windowY)
         };
         std::vector<cv::Point> correctedCorners;
 
@@ -162,8 +155,8 @@ namespace YACCP {
             int x = sumVector(maxWidthVec, column) + paddingX + extraSpacingX;
             int y = sumVector(maxHeightVec, row) + paddingY + extraSpacingY;
 
-            camDatas_[i].info.camViewData.windowX = x;
-            camDatas_[i].info.camViewData.windowY = y;
+            camDatas_[i].info.ViewData.windowX = x;
+            camDatas_[i].info.ViewData.windowY = y;
 
             camRefs.emplace_back(frameComposer_.add_new_subimage_parameters(
                     x,

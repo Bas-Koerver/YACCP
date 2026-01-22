@@ -3,12 +3,30 @@
 #include "orchestrator.hpp"
 
 #include "../global_variables/config_defaults.hpp"
-#include "../recoding/recorders/camera_worker.hpp"
 
-// #include <stdexcept>
+#include <boost/algorithm/string.hpp>
 
 
 namespace YACCP::Config {
+    WorkerTypes stringToWorkerType(std::string worker) {
+        boost::algorithm::to_lower(worker); // make string lowercase
+        if (const auto it = workerTypesMap.find(worker); it != workerTypesMap.end()) {
+            return it->second;
+        }
+        throw std::runtime_error("Unknown worker type: " + worker);
+    }
+
+    std::string workerTypeToString(const WorkerTypes workerType) {
+        for (const auto& [key, value] : workerTypesMap) {
+            if (value == workerType) return key;
+        }
+        return "Not found";
+    }
+
+    bool compareByIndex(const RecordingConfig::Worker &a, const RecordingConfig::Worker &b) {
+        return a.placement < b.placement;
+    }
+
     void parseRecordingConfig(const toml::table& tbl, RecordingConfig& config) {
         // [recording] table.
         const auto* recordingTbl{tbl["recording"].as_table()};
@@ -28,8 +46,8 @@ namespace YACCP::Config {
 
         // Check whether the defined masterWorker variables is a natural number N
         // and does not exceed the number of workers
-        if (config.masterWorker > workerArray->size() || config.masterWorker < 0)
-            throw std::runtime_error("Invalid master_worker index");
+        if (config.masterWorker + 1 > workerArray->size() || config.masterWorker < 0)
+            throw std::runtime_error("Invalid 'master_worker' index");
 
         config.workers.reserve(workerArray->size());
 
@@ -54,6 +72,10 @@ namespace YACCP::Config {
                 stringToWorkerType(requireVariable<std::string>(*workerTbl, "type", "[recording.workers]"))
             };
             worker.placement = requireVariable<int>(*workerTbl, "placement", "[recording.workers]");
+
+            if (worker.placement + 1 > workerArray->size() || worker.placement < 0)
+                throw std::runtime_error("Invalid 'placement' index"
+                    );
             if (typeCounts[type] > 1) {
                 worker.camUuid = requireVariable<std::string>(*workerTbl, "cam_uuid", "[recording.workers]");
             } else {
@@ -83,5 +105,6 @@ namespace YACCP::Config {
 
             config.workers.emplace_back(std::move(worker));
         }
+        std::ranges::sort(config.workers, compareByIndex);
     }
 } // YACCP::Config

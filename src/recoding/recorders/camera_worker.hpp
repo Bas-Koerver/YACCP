@@ -2,25 +2,10 @@
 #define YACCP_RECORDING_RECORDERS_CAM_WORKER_HPP
 #include "../../config/recording.hpp"
 
-// #include <filesystem>
 #include <mutex>
 
 namespace YACCP {
     struct CamData;
-    // struct VerifyTask;
-    /**
-     * @brief Simple enum to represent different camera worker types.
-     */
-    enum class WorkerTypes {
-        prophesee,
-        basler,
-    };
-
-    inline std::unordered_map<std::string, WorkerTypes> workerTypesMap{
-        {"prophesee", WorkerTypes::prophesee},
-        {"basler", WorkerTypes::basler}
-    };
-
     /**
      * @brief Parent class for camera workers.
      */
@@ -45,6 +30,8 @@ namespace YACCP {
          * @brief Function to list available camera sources.
          */
         static void listAvailableSources();
+
+        static void listJobs(const std::filesystem::path& dataPath);
 
         /**
          * @brief Function to start the camera worker.

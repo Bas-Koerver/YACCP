@@ -1,11 +1,8 @@
 #include "camera_calibration.hpp"
 
+#include <CLI/Validators.hpp>
+
 #include "utility.hpp"
-#include "recoding/job_data.hpp"
-
-#include <fstream>
-// #include "tools/image_validator.hpp"
-
 
 namespace YACCP {
     CameraCalibration::CameraCalibration(
@@ -17,80 +14,75 @@ namespace YACCP {
           cornerMin_(cornerMin) {
     }
 
-    // void Calibration::processImage(std::vector<cv::Point3f> objPoints, std::vector<cv::Point2f> imagePoints) {
-    //
-    // }
-
     void CameraCalibration::monoCalibrate(const std::string& jobName) {
+        // Check if given job ID exists.
         jobPath_ = dataPath_ / jobName;
         if (!exists(jobPath_)) {
             std::cerr << "Job: " << jobName << " does not exist in the given path: " << dataPath_ << "\n";
             return;
         }
 
+        // Check if the job has verified images
         if (!Utility::isNonEmptyDirectory(jobPath_ / "images" / "verified")) {
             std::cerr << "No verified images found for job: " << jobName << "\n";
             return;
         }
 
+        // Check if job_data.json exists
+        if (!exists(jobPath_ / "job_data.json")) {
+            throw std::runtime_error("No camera data was found.\nStopping! \n");
+        }
+
         std::vector<std::filesystem::path> cams;
         std::vector<std::filesystem::path> files;
-        std::vector<std::vector<cv::Point3f>> allObjPoints;
-        std::vector<std::vector<cv::Point2f>> allImgPoints;
+        Config::FileConfig fileConfig;
+
+        // Load job_data.json and save it to the FileConfig struct and CamData struct
+        nlohmann::json j = Utility::loadJsonFromFile(jobPath_, "job_data.json");
+        j.at("config").get_to(fileConfig);
+
+        std::vector<CamData> camDatas(fileConfig.recordingConfig.workers.size());
+        for (auto& [key, obj] : j.at("cams").items()) {
+            camDatas[obj.at("camId").get<int>()].info = obj.get<CamData::Info>();
+        }
+
+        for (auto& [info, runtimeData] : camDatas) {
+            std::string camDir{"cam_" + std::to_string(info.camIndexId)};
+            std::filesystem::path camPath{jobPath_/ "images" / "verified" / camDir};
+
+            if (!exists(camPath))
+                throw std::runtime_error("Directory for " + camDir + " does not exist.");
+
+            if (!Utility::isNonEmptyDirectory(camPath))
+                throw std::runtime_error("Camera directory " + camDir + " does not contain any data");
+
+            cams.emplace_back(camPath);
+        }
 
         cv::aruco::CharucoBoard board{charucoDetector_.getBoard()};
         cv::Size boardSize = board.getChessboardSize();
         int cornerAmount{(boardSize.width - 1) * (boardSize.height - 1)};
 
-        // Get all the camera directories
-        for (auto const& entry : std::filesystem::directory_iterator(jobPath_ / "images" / "verified")) {
-            if (!entry.is_directory()) continue;
-            cams.push_back(entry.path().filename());
-        }
+        std::ranges::sort(cams);
+
         // Get all the file indexes, only a single camera directory needs to be looked at,
         // since the filenames are the same across the multiple cameras.
-        for (auto const& entry : std::filesystem::directory_iterator(jobPath_ / "images" / "verified" / cams[0])) {
+        for (auto const& entry : std::filesystem::directory_iterator(cams.front())) {
             if (!entry.is_regular_file()) continue;
             files.push_back(entry.path().filename());
         }
 
-        if (!exists(jobPath_ / "job_data.json")) {
-            std::cerr << "No camera data was found.\nStopping!\n";
-            return;
-        }
-
-
-        std::ifstream f{jobPath_ / "job_data.json"};
-        if (!f) {
-            std::cerr << "Camera data exists but cannot be opened.\nStopping!\n";
-            return;
-        }
-
-        nlohmann::json jsonObj{nlohmann::json::parse(f)};
-        std::vector<YACCP::CamData::Info> camDatas(cams.size());
-        try {
-            for (auto& [key, j] : jsonObj.at("cams").items()) {
-                YACCP::CamData cam;
-                camDatas[j.at("camId").get<int>()] = j.get<YACCP::CamData::Info>();
-            }
-        } catch (std::exception& e) {
-            std::cerr << e.what() << '\n';\
-            return;
-        }
-
         auto i{0};
         for (auto& cam : cams) {
-            cv::Mat cameraMatrix(3, 3, CV_64F);
-            cv::Mat distCoeffs;
-            std::vector<cv::Mat> rvecs;
-            std::vector<cv::Mat> tvecs;
+            std::vector<std::vector<cv::Point3f>> allObjPoints;
+            std::vector<std::vector<cv::Point2f>> allImgPoints;
 
 
             for (auto& file : files) {
                 std::vector<cv::Point3f> objPoints;
                 std::vector<cv::Point2f> imgPoints;
-
-                cv::Mat img{cv::imread((jobPath_ / "images/verified" / cam / file).string(), cv::IMREAD_GRAYSCALE)};
+                // TODO: add progressbar for image loading & detection.
+                cv::Mat img{cv::imread((cam / file).string(), cv::IMREAD_GRAYSCALE)};
 
                 auto results{
                     Utility::findBoard(charucoDetector_, img, std::floor(static_cast<float>(cornerAmount) * cornerMin_))
@@ -106,25 +98,20 @@ namespace YACCP {
                 allImgPoints.push_back(imgPoints);
             }
 
-            camDatas[i].calibData.reprojError = cv::calibrateCamera(allObjPoints,
+            camDatas[i].info.calibData.reprojError = cv::calibrateCamera(allObjPoints,
                                                                     allImgPoints,
-                                                                    cv::Size(camDatas[i].resolution.width,
-                                                                             camDatas[i].resolution.height),
-                                                                    camDatas[i].calibData.cameraMatrix,
-                                                                    camDatas[i].calibData.distCoeffs,
-                                                                    camDatas[i].calibData.rvecs,
-                                                                    camDatas[i].calibData.tvecs);
+                                                                    cv::Size(camDatas[i].info.resolution.width,
+                                                                             camDatas[i].info.resolution.height),
+                                                                    camDatas[i].info.calibData.cameraMatrix,
+                                                                    camDatas[i].info.calibData.distCoeffs,
+                                                                    camDatas[i].info.calibData.rvecs,
+                                                                    camDatas[i].info.calibData.tvecs);
 
-            std::cout << "Calibration of cam: " << camDatas[i].camName << "ID: " << camDatas[i].camIndexId << "done \n";
-
+            std::cout << "Calibration of cam: " << camDatas[i].info.camName << "\n  ID: " << camDatas[i].info.camIndexId << ", done \n";
 
             i++;
         }
-        // Save json to file.
-        std::ofstream outfile(jobPath_ / "job_data.json");
-        for (auto i{0}; i < camDatas.size(); ++i) {
-            jsonObj["cams"]["cam_" + std::to_string(i)] = camDatas[i];
-        }
-        outfile << jsonObj.dump(4);
+        // Save JSON to file.
+        Utility::saveJsonToFile(jobPath_, fileConfig, camDatas);
     }
 }

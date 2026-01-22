@@ -4,8 +4,6 @@
 
 #include "../config/orchestrator.hpp"
 
-// #include <filesystem>
-
 // Yet Another Camera Calibration Platform.
 namespace YACCP {
     class CreateBoard {

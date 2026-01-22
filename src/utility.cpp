@@ -48,7 +48,21 @@ namespace YACCP::Utility {
             !std::filesystem::is_empty(path);
     }
 
-    nlohmann::json loadJsonFromFile(std::ifstream& file) {
+    std::ifstream openFile(const std::filesystem::path& path, const std::string& fileName) {
+        const auto filePath = path / fileName;
+
+        std::ifstream file(filePath);
+        if (!file.is_open()) {
+            throw std::runtime_error("Could not open file " + filePath.string());
+        }
+
+        return file;
+    }
+
+    nlohmann::json loadJsonFromFile(const std::filesystem::path& path, const std::string& fileName) {
+
+        std::ifstream file{openFile(path, fileName)};
+
         nlohmann::json j;
         try {
             j = nlohmann::json::parse(file);
@@ -61,12 +75,18 @@ namespace YACCP::Utility {
         return j;
     }
 
-    void saveJsonToFile(const std::filesystem::path& jobPath, Config::FileConfig& fileConfig, std::vector<CamData>& camDatas) {
+    void saveJsonToFile(const std::filesystem::path& jobPath,
+                        Config::FileConfig& fileConfig,
+                        std::vector<CamData>& camDatas) {
         // Create JSON object with all information on this job,
         // that includes the configured parameters in the config.toml and information about the job itself.
         std::cout << "\nWriting job_data.json\n";
         nlohmann::json j;
         j["openCv"] = CV_VERSION;
+        j["NLOHMANN_JSON"] = std::format("{}.{}.{}",
+                                      NLOHMANN_JSON_VERSION_MAJOR,
+                                      NLOHMANN_JSON_VERSION_MINOR,
+                                      NLOHMANN_JSON_VERSION_PATCH);
         j["config"] = fileConfig;
         j["cams"] = nlohmann::json::object();
 
@@ -79,14 +99,20 @@ namespace YACCP::Utility {
         file << j.dump(4);
     }
 
-    std::ifstream openFile(const std::filesystem::path& path, const std::string& fileName) {
-        const auto filePath = path / fileName;
+    bool askYesNo() {
+        char response;
 
-        std::ifstream file(filePath);
-        if (!file.is_open()) {
-            throw std::runtime_error("Could not open file " + filePath.string());
+        while (true) {
+            std::cin >> response;
+            response = std::tolower(response);
+
+            if (response != 'n' && response != 'y') {
+                std::cout << "Please enter 'y' or 'n': ";
+            } else if (response == 'y') {
+                return true;
+            } else if (response == 'n') {
+                return false;
+            }
         }
-
-        return file;
     }
 } // YACCP::Utility

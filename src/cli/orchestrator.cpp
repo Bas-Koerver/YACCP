@@ -5,7 +5,10 @@ namespace YACCP::CLI {
     void addCli(CliCmdConfig& cliCmdConfig, CliCmds& cliCmds) {
         cliCmds.app.description("Yet Another Camera Calibration Platform");
         cliCmds.app.set_help_all_flag("--help-all", "Expanded help");
-        // cliCmds.app.require_subcommand(1);
+#ifdef NDEBUG
+        cliCmds.app.require_subcommand(1);
+#endif
+
         const auto formatter{cliCmds.app.get_formatter()};
         formatter->right_column_width(60);
         formatter->column_width(60);

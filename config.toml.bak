@@ -1,6 +1,11 @@
 [board]
+type = "charuco"
 squares_x = 7
 squares_y = 5
+square_pixel_length = 100
+marker_pixel_length = 70
+margin_size = 0
+border_bits = 1
 square_length = 0.0295
 marker_length = 0.0206
 
@@ -55,19 +60,24 @@ minimum_corner_fraction = 0.125
 #minMarkerLengthRatioOriginalImg = 0.0
 
 [recording]
-fps = 30
-accumulation_time = 33333 #Move this to prophesee
-slave_workers = ["prophesee"]
-master_worker = "basler"
-cam_placement = [0, 1]
-master_camera = 2
+master_worker = 1
 
-[recording.workers.prophesee]
-save_eventfile = true # Optional
-cam_uuid = ["123", "456"] # Optional
+# Possible workers are: prophesee, basler
+[[recording.workers]]
+type = "basler"
+placement = 1
+#cam_uuid = "789" # Optional
 
-[recording.workers.basler]
-cam_uuid = ["789"] # Optional
+[[recording.workers]]
+type = "prophesee"
+accumulation_time = 33333
+placement = 0
+save_event_file = true # Optional
+falling_edge_polarity = 1
+cam_uuid = "9123" # Optional
+
+
+
 
 
 [viewing]

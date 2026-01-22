@@ -1,7 +1,5 @@
 #include "recording.hpp"
 
-// #include <CLI/App.hpp>
-
 namespace YACCP::CLI {
     ::CLI::App* addRecordingCmd(::CLI::App& app, RecordingCmdConfig& config) {
         ::CLI::App* subCmd = app.add_subcommand("record", "Record detections");

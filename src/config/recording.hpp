@@ -6,12 +6,20 @@
 
 #include <toml++/toml.hpp>
 
-
-namespace YACCP {
-    enum class WorkerTypes;
-}
-
 namespace YACCP::Config {
+    /**
+    * @brief Simple enum to represent different camera worker types.
+    */
+    enum class WorkerTypes {
+        prophesee,
+        basler,
+    };
+
+    inline std::unordered_map<std::string, WorkerTypes> workerTypesMap{
+            {"prophesee", WorkerTypes::prophesee},
+            {"basler", WorkerTypes::basler}
+    };
+
     struct Basler {
     };
 
@@ -35,10 +43,6 @@ namespace YACCP::Config {
         int masterWorker{};
         std::vector<Worker> workers{};
     };
-
-    std::string workerTypeToString(WorkerTypes workerType);
-
-    void parseRecordingConfig(const toml::table& tbl, RecordingConfig& config);
 
     // Logic for loading config structs to JSON and loading it from a JSON back to the appropriate structs.
     inline void to_json(nlohmann::json& j, const Prophesee& p) {
@@ -102,8 +106,15 @@ namespace YACCP::Config {
 
     inline void from_json(const nlohmann::json& j, RecordingConfig& r) {
         j.at("fps").get_to(r.fps);
+        j.at("masterWorker").get_to(r.masterWorker);
         r.workers = j.at("workers").get<std::vector<RecordingConfig::Worker>>();
     }
+
+    WorkerTypes stringToWorkerType(std::string worker);
+
+    std::string workerTypeToString(WorkerTypes workerType);
+
+    void parseRecordingConfig(const toml::table& tbl, RecordingConfig& config);
 } // YACCP::Config
 
 #endif //YACCP_CONFIG_RECORDING_HPP

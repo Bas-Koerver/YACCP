@@ -4,14 +4,6 @@
 #include "../job_data.hpp"
 
 #include <tabulate/table.hpp>
-// #include "../detection_validator.hpp"
-
-// #include <mutex>
-
-// #include <opencv2/imgproc.hpp>
-// #include <opencv2/core/mat.hpp>
-
-// #include <pylon/PylonIncludes.h>
 
 class FrameHandler : public Pylon::CImageEventHandler {
 public:
@@ -159,14 +151,14 @@ namespace YACCP {
                 return;
             }
 
-            if (!recordingConfig_.workers[index_].camUuid.empty()) {
-                cam.Attach(TlFactory.CreateDevice(
-                    Pylon::CDeviceInfo().SetFullName(recordingConfig_.workers[index_].camUuid.data())));
+            if (recordingConfig_.workers[index_].camUuid.empty()) {
+                cam.Attach(TlFactory.CreateDevice(lstDevices[0]));
                 camData_.info.camName = cam.GetDeviceInfo().GetModelName();
                 std::cout << "Using Basler device: " << camData_.info.camName << "\n";
                 camData_.runtimeData.isOpen.store(true);
             } else {
-                cam.Attach(TlFactory.CreateDevice(lstDevices[0]));
+                cam.Attach(TlFactory.CreateDevice(
+                    Pylon::CDeviceInfo().SetFullName(recordingConfig_.workers[index_].camUuid.data())));
                 camData_.info.camName = cam.GetDeviceInfo().GetModelName();
                 std::cout << "Using Basler device: " << camData_.info.camName << "\n";
                 camData_.runtimeData.isOpen.store(true);

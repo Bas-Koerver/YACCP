@@ -3,14 +3,8 @@
 #include "recorders/camera_worker.hpp"
 
 #include <readerwriterqueue.h>
-// #include <stop_token>
-// #include <vector>
-
-// #include <opencv2/objdetect/charuco_detector.hpp>
 
 #include <metavision/sdk/core/utils/frame_composer.h>
-
-
 
 namespace YACCP {
     struct ValidatedCornersData {
@@ -32,7 +26,7 @@ namespace YACCP {
                     const cv::aruco::CharucoDetector& charucoDetector,
                     moodycamel::ReaderWriterQueue<ValidatedCornersData>& valCornersQ,
                     const std::filesystem::path& outputPath,
-                    float cornerMin = .5F);
+                    float cornerMin);
 
         void start();
 

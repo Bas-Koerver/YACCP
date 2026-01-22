@@ -1,12 +1,8 @@
 #include "create_board.hpp"
 
-// #include <iostream>
-
-// #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
-// #include <opencv2/objdetect/charuco_detector.hpp>
 
 namespace YACCP {
     void CreateBoard::generateVideo(const cv::Mat& image, cv::Size size, std::filesystem::path jobPath) {

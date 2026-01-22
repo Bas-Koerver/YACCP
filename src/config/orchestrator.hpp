@@ -5,8 +5,6 @@
 #include "recording.hpp"
 #include "viewing.hpp"
 
-// #include <filesystem>
-
 namespace YACCP::Config {
     struct FileConfig {
         BoardConfig boardConfig;
@@ -17,22 +15,19 @@ namespace YACCP::Config {
 
     template <typename T>
     [[nodiscard]] T requireVariable(const toml::table& tbl, std::string_view key, std::string_view keyPath = {}) {
-        if (auto value = tbl[key].value < T > ())
+        if (auto value = tbl[key].value<T>())
             return *value;
 
         if (keyPath.empty())
-            throw std::runtime_error("Variable: " + std::string(key) + " is missing or invalid");
+            throw std::runtime_error("Variable: '" + std::string(key) + "' is missing or invalid");
 
         throw std::runtime_error(
-            "Variable: " + std::string(key) + " at [" + std::string(keyPath) + "] is missing or invalid");
+            "Variable: '" + std::string(key) + "' at [" + std::string(keyPath) + "] is missing or invalid");
     }
 
-    WorkerTypes stringToWorkerType(const std::string& worker);
-
-    void loadConfig(FileConfig& config, const std::filesystem::path& path);
-
-    void loadBoardConfig(FileConfig& config, const std::filesystem::path& path);
-
+    /*
+     * For serialising the struct to JSON
+     */
     inline void to_json(nlohmann::json& j, const FileConfig& f) {
         j = {
             {"boardConfig", f.boardConfig},
@@ -46,6 +41,10 @@ namespace YACCP::Config {
         j.at("detectionConfig").get_to(f.detectionConfig);
         j.at("recordingConfig").get_to(f.recordingConfig);
     }
+
+    void loadConfig(FileConfig& config, const std::filesystem::path& path, bool boardCreation = false);
+
+    void loadBoardConfig(FileConfig& config, const std::filesystem::path& path, bool boardCreation = true);
 } // YACCP::Config
 
 #endif //YACCP_CONFIG_ORCHESTRATOR_HPP

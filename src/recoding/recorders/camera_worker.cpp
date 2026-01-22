@@ -1,10 +1,7 @@
 #include "camera_worker.hpp"
 
 #include "../job_data.hpp"
-
-// #include <iostream>
-// #include <stop_token>
-// #include <utility>
+#include "../../utility.hpp"
 
 namespace YACCP {
     CameraWorker::CameraWorker(std::stop_source stopSource,
@@ -24,6 +21,30 @@ namespace YACCP {
     void CameraWorker::listAvailableSources() {
         std::cerr << "The function to list the available sources is not implemented \n";
         throw std::logic_error("Function not yet implemented");
+    }
+
+    void CameraWorker::listJobs(const std::filesystem::path& dataPath) {
+        std::cout << "Jobs without recording data: \n";
+        for (auto const& entry : std::filesystem::directory_iterator(dataPath)) {
+            if (!entry.is_directory()) continue;
+
+            // Check of files present in the raw folder.
+            if (Utility::isNonEmptyDirectory(entry.path() / "images" / "raw"))
+                continue;
+
+            std::cout << "  " << entry.path().filename() << "\n";
+        }
+
+        std::cout << "\nJobs already with recording data: \n";
+        for (auto const& entry : std::filesystem::directory_iterator(dataPath)) {
+            if (!entry.is_directory()) continue;
+
+            // Check of files present in the raw folder.
+            if (!Utility::isNonEmptyDirectory(entry.path() / "images" / "raw"))
+                continue;
+
+            std::cout << "  " << entry.path().filename() << "\n";
+        }
     }
 
     void CameraWorker::start() {

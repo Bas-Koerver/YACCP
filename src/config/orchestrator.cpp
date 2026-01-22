@@ -2,25 +2,8 @@
 
 #include "../recoding/recorders/camera_worker.hpp"
 
-// #include <iostream>
-// #include <toml++/toml.hpp>
-
 namespace YACCP::Config {
-    WorkerTypes stringToWorkerType(const std::string& worker) {
-        if (const auto it = workerTypesMap.find(worker); it != workerTypesMap.end()) {
-            return it->second;
-        }
-        throw std::runtime_error("Unknown worker type: " + worker);
-    }
-
-    std::string workerTypeToString(WorkerTypes workerType) {
-        for (const auto& [key, value] : workerTypesMap) {
-            if (value == workerType) return key;
-        }
-        return "Not found";
-    }
-
-    void loadConfig(FileConfig& config, const std::filesystem::path& path) {
+    void loadConfig(FileConfig& config, const std::filesystem::path& path, const bool boardCreation) {
         // Load TOML configuration file.
         toml::table tbl;
         try {
@@ -31,13 +14,13 @@ namespace YACCP::Config {
             throw std::runtime_error(ss.str());
         }
 
-        parseBoardConfig(tbl, config.boardConfig);
+        parseBoardConfig(tbl, config.boardConfig, boardCreation);
         parseDetectionConfig(tbl, config.detectionConfig);
         parseRecordingConfig(tbl, config.recordingConfig);
         parseViewingConfig(tbl, config.viewingConfig);
     }
 
-    void loadBoardConfig(FileConfig& config, const std::filesystem::path& path) {
+    void loadBoardConfig(FileConfig& config, const std::filesystem::path& path, const bool boardCreation) {
         // Load TOML configuration file.
         toml::table tbl;
         try {
@@ -48,7 +31,7 @@ namespace YACCP::Config {
             throw std::runtime_error(ss.str());
         }
 
-        parseBoardConfig(tbl, config.boardConfig);
+        parseBoardConfig(tbl, config.boardConfig, boardCreation);
         parseDetectionConfig(tbl, config.detectionConfig);
     }
 } // YACCP::Config

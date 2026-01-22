@@ -7,6 +7,17 @@
 #include <toml++/toml.hpp>
 
 namespace YACCP::Config {
+    /**
+    * @brief Simple enum to represent different board types.
+    */
+    enum class BoardTypes {
+        charuco,
+    };
+
+    inline std::unordered_map<std::string, BoardTypes> boardTypesMap{
+        {"charuco", BoardTypes::charuco},
+    };
+
     struct BoardConfig {
         cv::Size boardSize{};
         float squareLength{};
@@ -46,7 +57,11 @@ namespace YACCP::Config {
         j.at("borderBits").get_to(b.borderBits);
     }
 
-    void parseBoardConfig(const toml::table& tbl, BoardConfig& config);
+    BoardTypes stringToBoardType(std::string board);
+
+    std::string boardTypeToString(BoardTypes boardType);
+
+    void parseBoardConfig(const toml::table& tbl, BoardConfig& config, bool boardCreation);
 } // YACCP::Config
 
 #endif //YACCP_CONFIG_BOARD_HPP

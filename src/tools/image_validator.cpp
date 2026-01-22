@@ -3,12 +3,9 @@
 #include "../utility.hpp"
 
 #include <fstream>
-// #include <iostream>
 
 #include <metavision/sdk/ui/utils/event_loop.h>
 #include <metavision/sdk/ui/utils/window.h>
-
-// #include <nlohmann/json.hpp>
 
 namespace YACCP {
     void ImageValidator::updateSubimages(Metavision::FrameComposer& frameComposer,
@@ -59,18 +56,19 @@ namespace YACCP {
                                         const std::string& jobId) {
         jobPath_ = dataPath / jobId;
         if (!exists(jobPath_)) {
-            std::cerr << "Job: " << jobId << " does not exist in the given path: " << dataPath << "\n";
-            return;
+            std::stringstream ss;
+            ss << "Job: " << jobId << " does not exist in the given path: " << dataPath << "\n";
+            throw std::runtime_error(ss.str());
         }
 
         if (!Utility::isNonEmptyDirectory(jobPath_ / "images" / "raw")) {
-            std::cerr << "\nNo raw images found for job: " << jobId << "\n";
-            return;
+            throw std::runtime_error("\nNo raw images found for job: " + jobId + "\n");
         }
 
         std::vector<std::filesystem::path> cams;
         std::vector<std::filesystem::path> images;
         std::vector<int> camRefs;
+        Config::FileConfig fileConfig;
 
         for (auto const& entry : std::filesystem::directory_iterator(jobPath_ / "images" / "raw")) {
             if (!entry.is_directory()) continue;
@@ -84,40 +82,32 @@ namespace YACCP {
         std::ranges::sort(images);
 
         if (!exists(jobPath_ / "job_data.json")) {
-            std::cerr << "No camera data was found.\nStopping! \n";
-            return;
+            throw std::runtime_error("No camera data was found.\nStopping! \n");
         }
 
-        std::ifstream file{jobPath_ / "job_data.json"};
-        if (!file) {
-            std::cerr << "Camera data exists but cannot be opened.\nStopping!\n";
-            return;
+        nlohmann::json j = Utility::loadJsonFromFile(jobPath_, "job_data.json");
+        j.at("config").get_to(fileConfig);
+
+        std::vector<CamData::Info> camDatas(cams.size());
+        for (auto& [key, obj] : j.at("cams").items()) {
+            CamData cam;
+            camDatas[obj.at("camId").get<int>()] = obj.get<CamData::Info>();
         }
-        nlohmann::json j{nlohmann::json::parse(file)};
 
         Metavision::FrameComposer frameComposer;
-        try {
-            for (const auto& cam : cams) {
-                const auto& camj = j.at("cams").at(cam.string());
-                const auto& view = camj.at("view");
-                const auto& resolution = camj.at("resolution");
+        for (const auto& cam : camDatas) {
 
-                const int topLeftX = view.at("windowX").get<int>();
-                const int topLeftY = view.at("windowY").get<int>();
-                const unsigned width = resolution.at("width").get<unsigned>();
-                const unsigned height = resolution.at("height").get<unsigned>();
-                camRefs.emplace_back(
-                    frameComposer.add_new_subimage_parameters(topLeftX,
-                                                              topLeftY,
-                                                              {width, height},
-                                                              Metavision::FrameComposer::GrayToColorOptions()
-                    )
-                );
-            }
-        } catch (std::exception& e) {
-            std::cerr << "Exception: " << e.what() << "\n";
-            std::cerr << "The job_data.json has the wrong format";
-            return;
+            const int topLeftX = cam.ViewData.windowX;
+            const int topLeftY = cam.ViewData.windowY;
+            const unsigned width = cam.resolution.width;
+            const unsigned height = cam.resolution.height;
+            camRefs.emplace_back(
+                frameComposer.add_new_subimage_parameters(topLeftX,
+                                                          topLeftY,
+                                                          {width, height},
+                                                          Metavision::FrameComposer::GrayToColorOptions()
+                )
+            );
         }
 
         double scaleX{static_cast<double>(resolutionWidth) / frameComposer.get_total_width()};
@@ -224,21 +214,8 @@ namespace YACCP {
         if (Utility::isNonEmptyDirectory(jobPath_ / "images" / "verified")) {
             Utility::clearScreen();
             std::cout << "Verified directory already present, do you want to overwrite it? (y/n): ";
-            char response;
-            bool keepAsking{true};
 
-            while (keepAsking) {
-                std::cin >> response;
-                response = std::tolower(response);
-
-                if (response != 'n' && response != 'y') {
-                    std::cout << "Please enter 'y' or 'n': ";
-                } else {
-                    keepAsking = false;
-                }
-            }
-
-            if (response == 'y') {
+            if (Utility::askYesNo()) {
                 std::filesystem::remove_all(jobPath_ / "images" / "verified");
             } else {
                 buffer.disable();

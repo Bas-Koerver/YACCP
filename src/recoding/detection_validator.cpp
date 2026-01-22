@@ -4,9 +4,6 @@
 
 #include "../utility.hpp"
 
-// #include <stop_token>
-// #include <vector>
-
 namespace YACCP {
     DetectionValidator::DetectionValidator(std::stop_source stopSource,
                                            std::vector<CamData>& camDatas,

@@ -1,13 +1,6 @@
 #include "prophesee_cam_worker.hpp"
 
-// #include "camera_worker.hpp"
-// #include "../detection_validator.hpp"
 #include "../job_data.hpp"
-// #include "../../config/recording.hpp"
-
-// #include <filesystem>
-// #include <iostream>
-// #include <string>
 
 #include <metavision/hal/facilities/i_hw_identification.h>
 #include <metavision/hal/facilities/i_ll_biases.h>

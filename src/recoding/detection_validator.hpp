@@ -4,11 +4,6 @@
 
 #include "recorders/camera_worker.hpp"
 
-// #include <readerwriterqueue.h>
-
-// #include <opencv2/objdetect/charuco_detector.hpp>
-
-
 namespace YACCP {
     struct VerifyTask {
         int id;

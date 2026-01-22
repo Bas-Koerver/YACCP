@@ -2,9 +2,6 @@
 #define YACCP_RECORDING_JOB_DATA_HPP
 #include "detection_validator.hpp"
 
-// #include <readerwriterqueue.h>
-
-
 namespace YACCP {
     static nlohmann::json matTo2dArray(const cv::Mat& m) {
         CV_Assert(m.type() == CV_64F);
@@ -109,8 +106,8 @@ namespace YACCP {
     * @param frameVerifyQ Queue to send frames to the verification thread.
     */
     struct CamData {
+        // TODO: Remove this in favor of current config setup (horizontal views.)
         struct ViewData {
-            // int windowX;
             int windowX;
             int windowY;
         };
@@ -131,7 +128,7 @@ namespace YACCP {
             cv::Size resolution;
             bool isMaster;
 
-            ViewData camViewData;
+            ViewData ViewData;
             CalibData calibData;
         };
 
@@ -204,7 +201,7 @@ namespace YACCP {
                 }
             },
             {"isMaster", i.isMaster},
-            {"view", i.camViewData},
+            {"view", i.ViewData},
             {"calibration", i.calibData}
         };
     }
@@ -215,7 +212,7 @@ namespace YACCP {
         j.at("resolution").at("width").get_to(i.resolution.width);
         j.at("resolution").at("height").get_to(i.resolution.height);
         j.at("isMaster").get_to(i.isMaster);
-        j.at("view").get_to(i.camViewData);
+        j.at("view").get_to(i.ViewData);
         if (j.contains("calibration") && !j.at("calibration").is_null()) j.at("calibration").get_to(i.calibData);
     }
 

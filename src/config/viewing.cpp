@@ -2,9 +2,6 @@
 
 #include "../global_variables/config_defaults.hpp"
 
-// #include <stdexcept>
-
-
 namespace YACCP::Config {
     void parseViewingConfig(const toml::table& tbl, ViewingConfig& config) {
         // [viewing] configuration variables.

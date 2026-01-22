@@ -1,7 +1,6 @@
 #ifndef YACCP_RECORDING_RECORDERS_BASLER_CAM_WORKER_HPP
 #define YACCP_RECORDING_RECORDERS_BASLER_CAM_WORKER_HPP
 #include "camera_worker.hpp"
-// #include "../../config/orchestrator.hpp"
 
 #include <pylon/PylonIncludes.h>
 

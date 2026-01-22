@@ -1,6 +1,7 @@
 #ifndef YACCP_UTILITY_HPP
 #define YACCP_UTILITY_HPP
 #include "config/orchestrator.hpp"
+
 #include "recoding/job_data.hpp"
 
 #include <nlohmann/json.hpp>
@@ -41,8 +42,8 @@ namespace YACCP::Utility {
         std::vector<cv::Point2f> charucoCorners;
     };
 
-    template <typename T>
-    [[nodiscard]] static std::vector<T> intersection(std::vector<T> vec1, std::vector<T> vec2);
+    // template <typename T>
+    // [[nodiscard]] static std::vector<T> intersection(std::vector<T> vec1, std::vector<T> vec2);
 
     template <typename T>
     std::vector<T> intersection(std::vector<T> vec1, std::vector<T> vec2) {
@@ -60,7 +61,6 @@ namespace YACCP::Utility {
         return vecOutput;
     }
 
-
     void clearScreen();
 
     [[nodiscard]] CharucoResults findBoard(const cv::aruco::CharucoDetector& charucoDetector,
@@ -71,13 +71,15 @@ namespace YACCP::Utility {
 
     [[nodiscard]] bool isNonEmptyDirectory(const std::filesystem::path& path);
 
-    [[nodiscard]] nlohmann::json loadJsonFromFile(std::ifstream & file);
+    [[nodiscard]] std::ifstream openFile(const std::filesystem::path& path, const std::string& fileName);
+
+    [[nodiscard]] nlohmann::json loadJsonFromFile(const std::filesystem::path& path, const std::string& fileName);
 
     void saveJsonToFile(const std::filesystem::path& jobPath, Config::FileConfig& fileConfig, std::vector<CamData>& camDatas);
 
-    [[nodiscard]] std::ifstream openFile(const std::filesystem::path& path, const std::string& fileName);
-
     [[nodiscard]] nlohmann::json parseJsonFromFile(std::ifstream & file);
+
+    [[nodiscard]] bool askYesNo();
 } // YACCP::Utility
 
 
