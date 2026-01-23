@@ -20,6 +20,18 @@ namespace YACCP {
         }
     }
 
+    void printKeyMap() {
+        std::cout <<
+            R"(
+            Controls:
+            Esc / q     Quit
+            D           Toggle whether an image needs to be kept or discarded in the verified directory
+            Left arrow  Go one image back
+            Right arrow Go one image forward
+        )";
+        std::cout << "\n\n";
+    }
+
     void ImageValidator::listJobs(const std::filesystem::path& dataPath) {
         std::cout << "Available jobs to validate: \n";
         for (auto const& entry : std::filesystem::directory_iterator(dataPath)) {
@@ -106,6 +118,7 @@ namespace YACCP {
         double scale{std::min(scaleX, scaleY)};
         Utility::AlternativeBuffer buffer;
         buffer.enable();
+        printKeyMap();
 
         int width{(frameComposer.get_total_width())};
         int height{(frameComposer.get_total_height())};
@@ -147,6 +160,7 @@ namespace YACCP {
                         case Metavision::UIKeyEvent::KEY_LEFT:
                             if (currentFileIndex_ <= 0) {
                                 Utility::clearScreen();
+                                printKeyMap();
                                 std::cout << "Reached the beginning of the image set.\n Looping to end.\n\n";
                                 currentFileIndex_ = images.size() - 1;
                             } else {
@@ -158,6 +172,7 @@ namespace YACCP {
                         case Metavision::UIKeyEvent::KEY_RIGHT:
                             if (currentFileIndex_ >= images.size() - 1) {
                                 Utility::clearScreen();
+                                printKeyMap();
                                 std::cout << "Reached the end of the image set.\n Looping back to start.\n\n";
                                 currentFileIndex_ = 0;
                             } else {

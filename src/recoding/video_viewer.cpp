@@ -13,6 +13,20 @@ cv::Scalar getColourGradient(int index, int maxIndex) {
     return cv::Scalar(46., green, red);
 }
 
+void printKeyMap() {
+    std::cout <<
+        R"(
+            Controls:
+            Esc / q     Quit
+            A           Toggle between showing board detections on all or no cameras
+            S           Turn detections on for the previous camera
+            D           Turn detections on for the next camera
+            Z           Toggle recorded detections overlay
+            L           Clear recorded detections overlay
+        )";
+    std::cout << "\n\n";
+}
+
 namespace YACCP {
     template <typename T>
     T sumVector(std::vector<T>& dimVector, int stop) {
@@ -173,6 +187,10 @@ namespace YACCP {
         double scaleX{static_cast<double>(resolutionWidth_) / frameComposer_.get_total_width()};
         double scaleY{static_cast<double>(resolutionHeight_) / frameComposer_.get_total_height()};
         double scale{std::min(scaleX, scaleY)};
+        Utility::AlternativeBuffer buffer;
+        buffer.enable(); // BUG: There is a printing race at the moment between enabling this buffer and the camera threads printing the cameras their using.
+        printKeyMap(); // TODO: Make this a more global function where other functions can supply a vector of keybindings
+                       // TODO: Print pretty with tabulate?
 
         int width{(frameComposer_.get_total_width())};
         int height{(frameComposer_.get_total_height())};
@@ -205,9 +223,13 @@ namespace YACCP {
                     case Metavision::UIKeyEvent::KEY_A:
                         if (camDetectMode == -1) {
                             camDetectMode = -2;
+                            Utility::clearScreen();
+                            printKeyMap();
                             std::cout << "Showing no detections\n";
                         } else {
                             camDetectMode = -1;
+                            Utility::clearScreen();
+                            printKeyMap();
                             std::cout << "Showing detections on all cameras \n";
                         }
                         break;
@@ -215,6 +237,8 @@ namespace YACCP {
                         mode = camDetectMode.load(std::memory_order_relaxed);
                         if (mode > 0) {
                             camDetectMode.store(mode - 1, std::memory_order_relaxed);
+                            Utility::clearScreen();
+                            printKeyMap();
                             std::cout << "Showing detections on camera: " << camDatas_[camDetectMode].info.camName
                                 <<
                                 "\n";
@@ -224,6 +248,8 @@ namespace YACCP {
                         mode = camDetectMode.load(std::memory_order_relaxed);
                         if (mode < static_cast<int>(camRefs.size()) - 1 && mode >= -1) {
                             camDetectMode.store(mode + 1, std::memory_order_relaxed);
+                            Utility::clearScreen();
+                            printKeyMap();
                             std::cout << "Showing detections on camera: " << camDatas_[camDetectMode].info.camName
                                 <<
                                 "\n";
@@ -233,6 +259,8 @@ namespace YACCP {
                         layerClean = detectLayerClean.load(std::memory_order_relaxed);
                         if (!layerClean) {
                             detectLayerClean.store(true, std::memory_order_relaxed);
+                            Utility::clearScreen();
+                            printKeyMap();
                             std::cout << "Cleaning detection overlay\n";
                         }
                         break;
@@ -240,9 +268,13 @@ namespace YACCP {
                         layerMode = detectLayerMode.load(std::memory_order_relaxed);
                         if (!layerMode) {
                             detectLayerMode.store(true, std::memory_order_relaxed);
+                            Utility::clearScreen();
+                            printKeyMap();
                             std::cout << "Enabling detection overlay mode\n";
                         } else {
                             detectLayerMode.store(false, std::memory_order_relaxed);
+                            Utility::clearScreen();
+                            printKeyMap();
                             std::cout << "Disabling detection overlay mode\n";
                         }
                     }
