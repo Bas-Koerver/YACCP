@@ -30,6 +30,7 @@ namespace YACCP {
 
         void start();
 
+
     private:
         std::stop_source stopSource_;
         std::stop_token stopToken_;
@@ -45,7 +46,7 @@ namespace YACCP {
 
         void processFrame(std::stop_token stopToken, CamData& camData, int camRef, std::atomic<int>& camDetectMode);
 
-        [[nodiscard]] std::tuple<std::vector<int>, std::vector<int>> calculateBiggestDims() const;
+        [[nodiscard]] std::tuple<std::vector<int>, std::vector<int> > calculateBiggestDims() const;
 
         [[nodiscard]] std::tuple<int, int> calculateRowColumnIndex(int camIndex) const;
 

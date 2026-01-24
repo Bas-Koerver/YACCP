@@ -5,7 +5,6 @@
 #include <CLI/App.hpp>
 
 
-
 namespace YACCP::CLI {
     struct BoardCreationCmdConfig {
         bool showAvailableJobs{};
@@ -14,7 +13,7 @@ namespace YACCP::CLI {
         bool generateVideo{GlobalVariables::generateVideo};
     };
 
-    ::CLI::App* addBoardCreationCmd(::CLI::App& app, BoardCreationCmdConfig& config);
+    ::CLI::App* addBoardCreationCmd(::CLI::App & app, BoardCreationCmdConfig & config);
 } // namespace YACCP::CLI
 
 #endif // YACCP_CLI_BOARD_CREATION_HPP

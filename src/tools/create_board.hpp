@@ -4,22 +4,12 @@
 
 #include "../config/orchestrator.hpp"
 
-// Yet Another Camera Calibration Platform.
-namespace YACCP {
-    class CreateBoard {
-    public:
-        static void listJobs(const std::filesystem::path& dataPath);
+namespace YACCP::CreateBoard {
+    void listJobs(const std::filesystem::path& dataPath);
 
-        // TODO: Add different board types (chessboard, circle grid).
-        static void charuco(const Config::FileConfig& fileConfig,
-                            const CLI::BoardCreationCmdConfig& boardCreationConfig,
-                            const std::filesystem::path& jobPath);
-
-    private:
-        static void generateVideo(const cv::Mat& image,
-                                  cv::Size size,
-                                  std::filesystem::path jobPath);
-    };
-} // namespace YACCP
+    void charuco(const Config::FileConfig& fileConfig,
+                 const CLI::BoardCreationCmdConfig& boardCreationConfig,
+                 const std::filesystem::path& jobPath);
+}
 
 #endif // YACCP_TOOLS_CREATE_BOARD

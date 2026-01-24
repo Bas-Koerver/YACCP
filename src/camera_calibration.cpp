@@ -14,13 +14,11 @@ namespace YACCP::Calibration {
         // index lookup
         std::unordered_map<int, std::size_t> leftIds;
         leftIds.reserve(resultsLeft.charucoIds.size());
-        for (std::size_t i{0}; i < resultsLeft.charucoIds.size(); ++i)
-            leftIds[resultsLeft.charucoIds[i]] = i;
+        for (std::size_t i{0}; i < resultsLeft.charucoIds.size(); ++i) leftIds[resultsLeft.charucoIds[i]] = i;
 
         std::unordered_map<int, std::size_t> rightIds;
         rightIds.reserve(resultsRight.charucoIds.size());
-        for (std::size_t i{0}; i < resultsRight.charucoIds.size(); ++i)
-            rightIds[resultsRight.charucoIds[i]] = i;
+        for (std::size_t i{0}; i < resultsRight.charucoIds.size(); ++i) rightIds[resultsRight.charucoIds[i]] = i;
 
         // overlap ids (optionally sort for deterministic ordering)
         const std::vector overlapIds{Utility::intersection(resultsLeft.charucoIds, resultsRight.charucoIds)};
@@ -32,14 +30,14 @@ namespace YACCP::Calibration {
         for (int id : overlapIds) {
             auto iteratorLeft{leftIds.find(id)};
             auto iteratorRight{rightIds.find(id)};
-            if (iteratorLeft == leftIds.end() || iteratorRight == rightIds.end())
-                continue;
+            if (iteratorLeft == leftIds.end() || iteratorRight == rightIds.end()) continue;
 
             outIds.push_back(id);
             overlapCornersLeft.push_back(resultsLeft.charucoCorners[iteratorLeft->second]);
             overlapCornersRight.push_back(resultsRight.charucoCorners[iteratorRight->second]);
         }
     }
+
 
     void getCamDirs(std::vector<std::filesystem::path>& cams,
                     std::vector<CamData>& camDatas,
@@ -48,11 +46,11 @@ namespace YACCP::Calibration {
             std::string camDir{"cam_" + std::to_string(info.camIndexId)};
             std::filesystem::path camPath{jobPath / "images" / "verified" / camDir};
 
-            if (!exists(camPath))
-                throw std::runtime_error("Directory for " + camDir + " does not exist.");
+            if (!exists(camPath)) throw std::runtime_error("Directory for " + camDir + " does not exist.");
 
             if (!Utility::isNonEmptyDirectory(camPath))
-                throw std::runtime_error("Camera directory " + camDir + " does not contain any data");
+                throw std::runtime_error(
+                    "Camera directory " + camDir + " does not contain any data");
 
             cams.emplace_back(camPath);
         }
@@ -60,12 +58,14 @@ namespace YACCP::Calibration {
         std::ranges::sort(cams);
     }
 
+
     void getImages(const std::filesystem::path& cam, std::vector<std::filesystem::path>& files) {
         for (auto const& entry : std::filesystem::directory_iterator(cam)) {
             if (!entry.is_regular_file()) continue;
             files.push_back(entry.path().filename());
         }
     }
+
 
     void monoCalibrate(const cv::aruco::CharucoDetector& charucoDetector,
                        std::vector<CamData>& camDatas,
@@ -86,9 +86,8 @@ namespace YACCP::Calibration {
 
         auto i{0};
         for (auto& cam : cams) {
-            std::vector<std::vector<cv::Point3f>> allObjPoints;
-            std::vector<std::vector<cv::Point2f>> allImgPoints;
-
+            std::vector<std::vector<cv::Point3f> > allObjPoints;
+            std::vector<std::vector<cv::Point2f> > allImgPoints;
 
             for (auto& file : files) {
                 std::vector<cv::Point3f> objPoints;
@@ -129,6 +128,7 @@ namespace YACCP::Calibration {
         }
     }
 
+
     void pairWiseStereoCalibrate(const cv::aruco::CharucoDetector& charucoDetector,
                                  std::vector<CamData>& camDatas,
                                  std::vector<StereoCalibData>& stereoCalibDatas,
@@ -151,13 +151,13 @@ namespace YACCP::Calibration {
         for (auto& [info, runtimeData] : camDatas) {
             if (info.calibData.cameraMatrix.empty() || info.calibData.distCoeffs.empty())
                 throw std::runtime_error("Camera: " + info.camName + " with ID: " + std::to_string(info.camIndexId) +
-                    "\nIs missing its camera matrix or distance coefficients vector, did you run mono calibration?");
+                                         "\nIs missing its camera matrix or distance coefficients vector, did you run mono calibration?");
         }
 
         for (auto left{0}; left < cams.size(); ++left) {
             for (auto right{left + 1}; right < cams.size(); ++right) {
-                std::vector<std::vector<cv::Point3f>> allObjPoints;
-                std::vector<std::vector<cv::Point2f>> allImgPointsLeft, allImgPointsRight;
+                std::vector<std::vector<cv::Point3f> > allObjPoints;
+                std::vector<std::vector<cv::Point2f> > allImgPointsLeft, allImgPointsRight;
                 StereoCalibData stereoCalibData;
                 stereoCalibData.camLeftId = left;
                 stereoCalibData.camRightId = right;

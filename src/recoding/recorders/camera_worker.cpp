@@ -18,10 +18,12 @@ namespace YACCP {
           jobPath_(std::move(jobPath)) {
     }
 
+
     void CameraWorker::listAvailableSources() {
         std::cerr << "The function to list the available sources is not implemented \n";
         throw std::logic_error("Function not yet implemented");
     }
+
 
     void CameraWorker::listJobs(const std::filesystem::path& dataPath) {
         std::cout << "Jobs without recording data: \n";
@@ -29,8 +31,7 @@ namespace YACCP {
             if (!entry.is_directory()) continue;
 
             // Check of files present in the raw folder.
-            if (Utility::isNonEmptyDirectory(entry.path() / "images" / "raw"))
-                continue;
+            if (Utility::isNonEmptyDirectory(entry.path() / "images" / "raw")) continue;
 
             std::cout << "  " << entry.path().filename() << "\n";
         }
@@ -40,12 +41,12 @@ namespace YACCP {
             if (!entry.is_directory()) continue;
 
             // Check of files present in the raw folder.
-            if (!Utility::isNonEmptyDirectory(entry.path() / "images" / "raw"))
-                continue;
+            if (!Utility::isNonEmptyDirectory(entry.path() / "images" / "raw")) continue;
 
             std::cout << "  " << entry.path().filename() << "\n";
         }
     }
+
 
     void CameraWorker::start() {
         std::cerr << "The function to start the camera worker is not implemented \n";

@@ -14,6 +14,7 @@ public:
           nodeMap_{np} {
     }
 
+
     void OnImageGrabbed(Pylon::CInstantCamera& cam, const Pylon::CGrabResultPtr& ptrGrabResult) override {
         if (!ptrGrabResult->GrabSucceeded()) {
             return;
@@ -37,6 +38,7 @@ public:
         }
     }
 
+
 private:
     std::mutex& frame_mutex_;
     cv::Mat& frame_;
@@ -54,6 +56,7 @@ namespace YACCP {
             (1.0 / static_cast<double>(recordingConfig_.fps)) * 1e6);
     }
 
+
     void setGainControl(GenApi::INodeMap& nodeMap) {
         Pylon::CFloatParameter(nodeMap, "AutoGainLowerLimit").SetValue(0.0);
         Pylon::CFloatParameter(nodeMap, "AutoGainUpperLimit").SetValue(48.0);
@@ -64,6 +67,7 @@ namespace YACCP {
         Pylon::CEnumParameter(nodeMap, "ExposureAuto").SetValue("Off");
     }
 
+
     void setTimingInterfaces(GenApi::INodeMap& nodeMap) {
         // TODO: Add exception handling for unsupported timing interfaces.
         // Enable trigger signals on exposure active.
@@ -71,6 +75,7 @@ namespace YACCP {
         Pylon::CEnumParameter(nodeMap, "LineMode").SetValue("Output");
         Pylon::CEnumParameter(nodeMap, "LineSource").SetValue("ExposureActive");
     }
+
 
     void setCounters(GenApi::INodeMap& nodeMap) {
         // Enable frame count.
@@ -80,12 +85,14 @@ namespace YACCP {
         Pylon::CCommandParameter(nodeMap, "CounterReset").Execute();
     }
 
+
     std::tuple<int, int> getDims(GenApi::INodeMap& nodeMap) {
         return {
             Pylon::CIntegerParameter(nodeMap, "Width").GetValue(),
             Pylon::CIntegerParameter(nodeMap, "Height").GetValue()
         };
     }
+
 
     std::tuple<int, int> BaslerCamWorker::getSetNodeMapParameters(GenApi::INodeMap& nodeMap) {
         setPixelFormat(nodeMap);
@@ -103,10 +110,12 @@ namespace YACCP {
                                      const Config::Basler& configBackend,
                                      const int index,
                                      const std::filesystem::path& jobPath)
-        : CameraWorker(stopSource, camDatas, recordingConfig, index, jobPath), configBackend_(configBackend) {
+        : CameraWorker(stopSource, camDatas, recordingConfig, index, jobPath),
+          configBackend_(configBackend) {
         Pylon::PylonInitialize();
         // TODO: Handle scenarios where the camera doesn't support external triggers
     }
+
 
     void BaslerCamWorker::listAvailableSources() {
         Pylon::PylonInitialize();
@@ -119,7 +128,8 @@ namespace YACCP {
                 std::cerr << "No available Basler cameras found \n";
                 Pylon::PylonTerminate();
             }
-        } catch (const GenICam::GenericException& e) {
+        }
+        catch (const GenICam::GenericException& e) {
             std::cerr << "Pylon error: " << e.GetDescription() << "\n";
             Pylon::PylonTerminate();
         }
@@ -134,6 +144,7 @@ namespace YACCP {
         }
         std::cout << "\n";
     }
+
 
     void BaslerCamWorker::start() {
         Pylon::CInstantCamera cam;
@@ -163,7 +174,8 @@ namespace YACCP {
                 std::cout << "Using Basler device: " << camData_.info.camName << "\n";
                 camData_.runtimeData.isOpen.store(true);
             }
-        } catch (const GenICam::GenericException& e) {
+        }
+        catch (const GenICam::GenericException& e) {
             std::cerr << "Pylon error: " << e.GetDescription() << "\n";
             Pylon::PylonTerminate();
             camData_.runtimeData.exitCode = EXIT_FAILURE;
@@ -249,6 +261,7 @@ namespace YACCP {
             stopSource_.request_stop();
         }
     }
+
 
     BaslerCamWorker::~BaslerCamWorker() {
         Pylon::PylonTerminate();

@@ -40,6 +40,7 @@ namespace YACCP {
 
         virtual ~CameraWorker() = default;
 
+
     protected:
         std::stop_source stopSource_;
         std::stop_token stopToken_;

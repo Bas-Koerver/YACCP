@@ -8,6 +8,7 @@ namespace YACCP::GlobalVariables {
     inline constexpr auto squarePixelLength{100};
     inline constexpr auto markerPixelLength{70};
     inline constexpr auto borderBits{1};
+    inline constexpr auto videoFps{60};
 
     // Default [detection] variables
     inline constexpr auto charucoDictionary{8};

@@ -10,7 +10,9 @@ namespace YACCP::Config {
         toml::table tbl;
         try {
             tbl = toml::parse_file((path / GlobalVariables::configFileName).string());
-        } catch (const toml::parse_error& err) {
+        }
+        catch (const
+            toml::parse_error& err) {
             std::stringstream ss{};
             ss << err.description() << "\n At: " << err.source();
             throw std::runtime_error(ss.str());
@@ -22,12 +24,15 @@ namespace YACCP::Config {
         parseViewingConfig(tbl, config.viewingConfig);
     }
 
+
     void loadBoardConfig(FileConfig& config, const std::filesystem::path& path, const bool boardCreation) {
         // Load TOML configuration file.
         toml::table tbl;
         try {
             tbl = toml::parse_file((path / GlobalVariables::configFileName).string());
-        } catch (const toml::parse_error& err) {
+        }
+        catch (const
+            toml::parse_error& err) {
             std::stringstream ss{};
             ss << err.description() << "\n At: " << err.source();
             throw std::runtime_error(ss.str());

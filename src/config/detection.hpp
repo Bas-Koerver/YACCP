@@ -14,10 +14,12 @@ namespace cv::aruco {
         };
     }
 
+
     inline void from_json(const nlohmann::json& j, CharucoParameters& p) {
         j.at("minMarkers").get_to(p.minMarkers);
         j.at("tryRefineMarkers").get_to(p.tryRefineMarkers);
     }
+
 
     inline void to_json(nlohmann::json& j, const DetectorParameters& p) {
         j = {
@@ -55,6 +57,7 @@ namespace cv::aruco {
             {"minMarkerLengthRatioOriginalImg", p.minMarkerLengthRatioOriginalImg}
         };
     }
+
 
     inline void from_json(const nlohmann::json& j, DetectorParameters& p) {
         j.at("adaptiveThreshWinSizeMin").get_to(p.adaptiveThreshWinSizeMin);
@@ -102,6 +105,7 @@ namespace YACCP::Config {
         cv::aruco::DetectorParameters detectorParameters{};
     };
 
+
     inline void to_json(nlohmann::json& j, const DetectionConfig& d) {
         j = {
             {"openCvDictionaryId", d.openCvDictionaryId},
@@ -112,12 +116,14 @@ namespace YACCP::Config {
         };
     }
 
+
     inline void from_json(const nlohmann::json& j, DetectionConfig& d) {
         j.at("openCvDictionaryId").get_to(d.openCvDictionaryId);
         j.at("cornerMin").get_to(d.cornerMin);
         j.at("charucoParameters").get_to(d.charucoParameters);
         j.at("detectorParameters").get_to(d.detectorParameters);
     }
+
 
     void parseDetectionConfig(const toml::table& tbl, DetectionConfig& config);
 } // YACCP::Config

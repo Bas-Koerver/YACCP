@@ -16,7 +16,8 @@ namespace YACCP::Config {
         if (const auto* charuco{(*detectionTbl)["charuco_parameters"].as_table()}) {
             config.charucoParameters.tryRefineMarkers = (*charuco)["refine"].value_or(
                 config.charucoParameters.tryRefineMarkers);
-            config.charucoParameters.minMarkers = (*charuco)["min_markers"].value_or(config.charucoParameters.minMarkers);
+            config.charucoParameters.minMarkers = (*charuco)["min_markers"].value_or(
+                config.charucoParameters.minMarkers);
         }
 
         // Load custom detector parameters if set, otherwise load defaults.
@@ -45,19 +46,22 @@ namespace YACCP::Config {
                 config.detectorParameters.cornerRefinementMethod);
             config.detectorParameters.cornerRefinementWinSize = (*detector)["cornerRefinementWinSize"].value_or(
                 config.detectorParameters.cornerRefinementWinSize);
-            config.detectorParameters.cornerRefinementMaxIterations = (*detector)["cornerRefinementMaxIterations"].value_or(
-                config.detectorParameters.cornerRefinementMaxIterations);
+            config.detectorParameters.cornerRefinementMaxIterations = (*detector)["cornerRefinementMaxIterations"].
+                value_or(
+                    config.detectorParameters.cornerRefinementMaxIterations);
             config.detectorParameters.cornerRefinementMinAccuracy = (*detector)["cornerRefinementMinAccuracy"].value_or(
                 config.detectorParameters.cornerRefinementMinAccuracy);
             config.detectorParameters.markerBorderBits = (*detector)["markerBorderBits"].value_or(
                 config.detectorParameters.markerBorderBits);
-            config.detectorParameters.perspectiveRemovePixelPerCell = (*detector)["perspectiveRemovePixelPerCell"].value_or(
-                config.detectorParameters.perspectiveRemovePixelPerCell);
+            config.detectorParameters.perspectiveRemovePixelPerCell = (*detector)["perspectiveRemovePixelPerCell"].
+                value_or(
+                    config.detectorParameters.perspectiveRemovePixelPerCell);
             config.detectorParameters.perspectiveRemoveIgnoredMarginPerCell = (*detector)[
                 "perspectiveRemoveIgnoredMarginPerCell"].value_or(
                 config.detectorParameters.perspectiveRemoveIgnoredMarginPerCell);
-            config.detectorParameters.maxErroneousBitsInBorderRate = (*detector)["maxErroneousBitsInBorderRate"].value_or(
-                config.detectorParameters.maxErroneousBitsInBorderRate);
+            config.detectorParameters.maxErroneousBitsInBorderRate = (*detector)["maxErroneousBitsInBorderRate"].
+                value_or(
+                    config.detectorParameters.maxErroneousBitsInBorderRate);
             config.detectorParameters.minOtsuStdDev = (*detector)["minOtsuStdDev"].value_or(
                 config.detectorParameters.minOtsuStdDev);
             config.detectorParameters.errorCorrectionRate = (*detector)["errorCorrectionRate"].value_or(

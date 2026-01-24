@@ -16,6 +16,7 @@ namespace YACCP::Config {
         throw std::runtime_error("Unknown worker type: " + worker);
     }
 
+
     std::string workerTypeToString(const WorkerTypes workerType) {
         for (const auto& [key, value] : workerTypesMap) {
             if (value == workerType) return key;
@@ -23,20 +24,20 @@ namespace YACCP::Config {
         return "Not found";
     }
 
-    bool compareByIndex(const RecordingConfig::Worker &a, const RecordingConfig::Worker &b) {
+
+    bool compareByIndex(const RecordingConfig::Worker& a, const RecordingConfig::Worker& b) {
         return a.placement < b.placement;
     }
+
 
     void parseRecordingConfig(const toml::table& tbl, RecordingConfig& config) {
         // [recording] table.
         const auto* recordingTbl{tbl["recording"].as_table()};
-        if (!recordingTbl)
-            throw std::runtime_error("Missing [recording] table");
+        if (!recordingTbl) throw std::runtime_error("Missing [recording] table");
 
         // [[recording.workers]] array of tables.
         const auto* workerArray{(*recordingTbl)["workers"].as_array()};
-        if (!workerArray)
-            throw std::runtime_error("Missing [[recording.workers]] array");
+        if (!workerArray) throw std::runtime_error("Missing [[recording.workers]] array");
 
         std::unordered_map<WorkerTypes, std::size_t> typeCounts;
 
@@ -47,15 +48,15 @@ namespace YACCP::Config {
         // Check whether the defined masterWorker variables is a natural number N
         // and does not exceed the number of workers
         if (config.masterWorker + 1 > workerArray->size() || config.masterWorker < 0)
-            throw std::runtime_error("Invalid 'master_worker' index");
+            throw std::runtime_error(
+                "Invalid 'master_worker' index");
 
         config.workers.reserve(workerArray->size());
 
         // Go through the array of tables.
         for (const toml::node& workerNode : *workerArray) {
             const toml::table* workerTbl = workerNode.as_table();
-            if (!workerTbl)
-                throw std::runtime_error("Each [[recording.workers]] entry must be a table");
+            if (!workerTbl) throw std::runtime_error("Each [[recording.workers]] entry must be a table");
             const WorkerTypes type{
                 stringToWorkerType(requireVariable<std::string>(*workerTbl, "type", "[recording.workers]"))
             };
@@ -75,7 +76,7 @@ namespace YACCP::Config {
 
             if (worker.placement + 1 > workerArray->size() || worker.placement < 0)
                 throw std::runtime_error("Invalid 'placement' index"
-                    );
+                );
             if (typeCounts[type] > 1) {
                 worker.camUuid = requireVariable<std::string>(*workerTbl, "cam_uuid", "[recording.workers]");
             } else {
@@ -90,7 +91,8 @@ namespace YACCP::Config {
             }
             case WorkerTypes::prophesee: {
                 Prophesee prophesee{};
-                prophesee.accumulationTime = (*workerTbl)["accumulation_time"].value_or(GlobalVariables::accumulationTime);
+                prophesee.accumulationTime = (*workerTbl)["accumulation_time"].value_or(
+                    GlobalVariables::accumulationTime);
                 prophesee.saveEventFile = (*workerTbl)["save_event_file"].value_or(false);
                 prophesee.fallingEdgePolarity = requireVariable<int>(*workerTbl,
                                                                      "falling_edge_polarity",

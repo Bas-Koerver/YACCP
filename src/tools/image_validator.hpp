@@ -15,6 +15,7 @@ namespace YACCP {
                             const std::filesystem::path& dataPath,
                             const std::string& jobId);
 
+
     private:
         std::filesystem::path jobPath_;
         int currentFileIndex_{0};

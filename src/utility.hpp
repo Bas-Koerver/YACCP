@@ -22,13 +22,18 @@ namespace YACCP::Utility {
             std::cout << "\x1b[?1049h\x1b[2J\x1b[1;1H" << std::flush;
         }
 
+
         void disable() {
             if (!altBufferEnabled_) return;
             altBufferEnabled_ = false;
             std::cout << "\x1b[?1049l" << std::flush;
         }
 
-        ~AlternativeBuffer() { disable(); }
+
+        ~AlternativeBuffer() {
+            disable();
+        }
+
 
     private:
         bool altBufferEnabled_{false};
@@ -37,7 +42,7 @@ namespace YACCP::Utility {
     struct CharucoResults {
         bool boardFound = false;
         std::vector<int> markerIds;
-        std::vector<std::vector<cv::Point2f>> markerCorners;
+        std::vector<std::vector<cv::Point2f> > markerCorners;
         std::vector<int> charucoIds;
         std::vector<cv::Point2f> charucoCorners;
     };
@@ -60,6 +65,7 @@ namespace YACCP::Utility {
 
         return vecOutput;
     }
+
 
     void clearScreen();
 
@@ -84,7 +90,7 @@ namespace YACCP::Utility {
                            const std::vector<CamData>* camDatas = nullptr,
                            const std::vector<StereoCalibData>* stereoCalibDatas = nullptr);
 
-    [[nodiscard]] nlohmann::json parseJsonFromFile(std::ifstream& file);
+    [[nodiscard]] nlohmann::json parseJsonFromFile(std::ifstream & file);
 
     [[nodiscard]] bool askYesNo();
 } // YACCP::Utility

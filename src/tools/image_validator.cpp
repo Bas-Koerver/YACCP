@@ -20,6 +20,7 @@ namespace YACCP {
         }
     }
 
+
     void printKeyMap() {
         std::cout <<
             R"(
@@ -31,6 +32,7 @@ namespace YACCP {
         )";
         std::cout << "\n\n";
     }
+
 
     void ImageValidator::listJobs(const std::filesystem::path& dataPath) {
         std::cout << "Available jobs to validate: \n";
@@ -61,6 +63,7 @@ namespace YACCP {
             std::cout << "  " << entry.path().filename() << "\n";
         }
     }
+
 
     void ImageValidator::validateImages(int resolutionWidth,
                                         int resolutionHeight,
@@ -248,7 +251,8 @@ namespace YACCP {
                     std::filesystem::copy(jobPath_ / "images" / "raw" / cams[j] / images[i],
                                           jobPath_ / "images" / "verified" / cams[j] / images[i]
                     );
-                } catch (const std::filesystem::filesystem_error& e) {
+                }
+                catch (const std::filesystem::filesystem_error& e) {
                     std::cerr << e.what() << "\n";
                 }
             }

@@ -28,6 +28,7 @@ namespace YACCP::Config {
         int borderBits{};
     };
 
+
     inline void to_json(nlohmann::json& j, const BoardConfig& b) {
         j = {
             {
@@ -46,6 +47,7 @@ namespace YACCP::Config {
         };
     }
 
+
     inline void from_json(const nlohmann::json& j, BoardConfig& b) {
         j.at("boardSize").at("width").get_to(b.boardSize.width);
         j.at("boardSize").at("height").get_to(b.boardSize.height);
@@ -56,6 +58,7 @@ namespace YACCP::Config {
         j.at("marginSize").get_to(b.marginSize);
         j.at("borderBits").get_to(b.borderBits);
     }
+
 
     BoardTypes stringToBoardType(std::string board);
 

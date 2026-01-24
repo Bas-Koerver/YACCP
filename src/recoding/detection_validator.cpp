@@ -20,13 +20,13 @@ namespace YACCP {
           cornerMin_(cornerMin) {
     }
 
+
     void DetectionValidator::start() {
         std::vector<VerifyTask> verifyTasks(camDatas_.size());
-        std::vector<std::vector<cv::Point2f>> allCharucoCorners(camDatas_.size());
+        std::vector<std::vector<cv::Point2f> > allCharucoCorners(camDatas_.size());
         cv::Size boardSize = charucoDetector_.getBoard().getChessboardSize();
         int validatedImagePair{};
         int validatedCorners{};
-
 
         int cornerAmount = (boardSize.width - 1) * (boardSize.height - 1);
 
@@ -42,8 +42,8 @@ namespace YACCP {
                     if (std::find(camTaskCorrect.begin(), camTaskCorrect.end(), i) != camTaskCorrect.end()) continue;
 
                     while (!stopToken_.stop_requested() &&
-                        !camDatas_[i].runtimeData.frameVerifyQ.wait_dequeue_timed(verifyTasks[i],
-                            std::chrono::milliseconds(100)));
+                           !camDatas_[i].runtimeData.frameVerifyQ.wait_dequeue_timed(verifyTasks[i],
+                               std::chrono::milliseconds(100)));
                 }
 
                 if (stopToken_.stop_requested()) {
@@ -101,14 +101,14 @@ namespace YACCP {
                     vec1 = Utility::intersection(vec1, vec2);
 
                     if (static_cast<float>(vec1.size()) < std::floor(
-                        static_cast<float>(cornerAmount) * cornerMin_)) {
+                            static_cast<float>(cornerAmount) * cornerMin_)) {
                         skipLoop = true;
                         break;
                     }
                 }
             } else {
                 if (static_cast<float>(vec1.size()) < std::floor(
-                    static_cast<float>(cornerAmount) * cornerMin_)) {
+                        static_cast<float>(cornerAmount) * cornerMin_)) {
                     skipLoop = true;
                 }
             }

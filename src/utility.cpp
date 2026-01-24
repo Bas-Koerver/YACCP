@@ -18,6 +18,7 @@ namespace YACCP::Utility {
         std::cout << "\x1b[2J\x1b[1;1H" << std::flush;
     }
 
+
     // MISRA deviation: OpenCV Charuco API requires std::vector
     CharucoResults findBoard(const cv::aruco::CharucoDetector& charucoDetector,
                              const cv::Mat& gray,
@@ -36,6 +37,7 @@ namespace YACCP::Utility {
         return charucoResults;
     }
 
+
     std::_Timeobj<char, const tm*> getCurrentDateTime() {
         // Get the current date and time.
         const auto now = std::chrono::system_clock::now();
@@ -45,11 +47,13 @@ namespace YACCP::Utility {
         return std::put_time(std::gmtime(&localTime), "%F_%H-%M-%S");
     }
 
+
     bool isNonEmptyDirectory(const std::filesystem::path& path) {
         return std::filesystem::exists(path) &&
-            std::filesystem::is_directory(path) &&
-            !std::filesystem::is_empty(path);
+               std::filesystem::is_directory(path) &&
+               !std::filesystem::is_empty(path);
     }
+
 
     std::ifstream openFile(const std::filesystem::path& path, const std::string& fileName) {
         const auto filePath = path / fileName;
@@ -62,11 +66,13 @@ namespace YACCP::Utility {
         return file;
     }
 
+
     void checkJobPath(const std::filesystem::path& dataPath, const std::string& jobId) {
         if (!exists(dataPath / jobId)) {
             throw std::runtime_error("Job: " + jobId + " does not exist in the given path: " + dataPath.string());
         }
     }
+
 
     void checkJobDataAvailable(const std::filesystem::path& jobPath) {
         if (!exists(jobPath / GlobalVariables::jobDataFileName)) {
@@ -74,6 +80,7 @@ namespace YACCP::Utility {
                 "No " + static_cast<std::string>(GlobalVariables::jobDataFileName) + " was found.");
         }
     }
+
 
     nlohmann::json loadJobDataFromFile(const std::filesystem::path& path) {
         checkJobDataAvailable(path);
@@ -83,7 +90,8 @@ namespace YACCP::Utility {
         nlohmann::json j;
         try {
             j = nlohmann::json::parse(file);
-        } catch (const nlohmann::json::parse_error& e) {
+        }
+        catch (const nlohmann::json::parse_error& e) {
             std::stringstream ss{};
             ss << "There is a problem with the job_data.json\n" << e.what();
             throw std::runtime_error(ss.str());
@@ -91,6 +99,7 @@ namespace YACCP::Utility {
 
         return j;
     }
+
 
     void saveJobDataToFile(const std::filesystem::path& jobPath,
                            Config::FileConfig& fileConfig,
@@ -130,6 +139,7 @@ namespace YACCP::Utility {
         file << j.dump(4);
     }
 
+
     bool askYesNo() {
         char response;
 
@@ -139,7 +149,8 @@ namespace YACCP::Utility {
 
             if (response != 'n' && response != 'y') {
                 std::cout << "Please enter 'y' or 'n': ";
-            } else if (response == 'y') {
+            } else if (
+                response == 'y') {
                 return true;
             } else if (response == 'n') {
                 return false;

@@ -13,17 +13,17 @@ namespace YACCP::Config {
         ViewingConfig viewingConfig;
     };
 
+
     template <typename T>
     [[nodiscard]] T requireVariable(const toml::table& tbl, std::string_view key, std::string_view keyPath = {}) {
-        if (auto value = tbl[key].value<T>())
-            return *value;
+        if (auto value = tbl[key].value < T > ()) return *value;
 
-        if (keyPath.empty())
-            throw std::runtime_error("Variable: '" + std::string(key) + "' is missing or invalid");
+        if (keyPath.empty()) throw std::runtime_error("Variable: '" + std::string(key) + "' is missing or invalid");
 
         throw std::runtime_error(
             "Variable: '" + std::string(key) + "' at [" + std::string(keyPath) + "] is missing or invalid");
     }
+
 
     /*
      * For serialising the struct to JSON
@@ -36,11 +36,13 @@ namespace YACCP::Config {
         };
     }
 
+
     inline void from_json(const nlohmann::json& j, FileConfig& f) {
         j.at("boardConfig").get_to(f.boardConfig);
         j.at("detectionConfig").get_to(f.detectionConfig);
         j.at("recordingConfig").get_to(f.recordingConfig);
     }
+
 
     void loadConfig(FileConfig& config, const std::filesystem::path& path, bool boardCreation = false);
 

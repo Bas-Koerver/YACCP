@@ -20,6 +20,5 @@ namespace YACCP::Executor {
                                       mode->height - 500,
                                       dataPath,
                                       cliCmdConfig.validationCmdConfig.jobId);
-
     }
 } // YACCP::Executor

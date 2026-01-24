@@ -17,6 +17,7 @@ namespace YACCP {
         return out;
     }
 
+
     static cv::Mat matFrom2dArray(const nlohmann::json& j) {
         if (j.is_null()) return cv::Mat();
         if (!j.is_array() || j.empty()) return cv::Mat();
@@ -36,6 +37,7 @@ namespace YACCP {
         return m;
     }
 
+
     // TODO: check if it's better to keep row column vector formatting.
     static nlohmann::json matTo1dArray(const cv::Mat& m) {
         CV_Assert(m.type() == CV_64F);
@@ -52,6 +54,7 @@ namespace YACCP {
         return out;
     }
 
+
     static cv::Mat matFrom1dArray(const nlohmann::json& j) {
         if (j.is_null()) return cv::Mat();
         if (!j.is_array()) return cv::Mat();
@@ -67,6 +70,7 @@ namespace YACCP {
         return m;
     }
 
+
     static nlohmann::json vec3ToArray(const cv::Mat& v) {
         CV_Assert(v.type() == CV_64F);
         CV_Assert((v.rows == 3 && v.cols == 1) || (v.rows == 1 && v.cols == 3));
@@ -77,6 +81,7 @@ namespace YACCP {
             v.rows == 3 ? v.at<double>(2, 0) : v.at<double>(0, 2),
         });
     }
+
 
     static cv::Mat vec3FromArray(const nlohmann::json& j) {
         if (j.is_null()) return cv::Mat();
@@ -89,6 +94,7 @@ namespace YACCP {
 
         return m;
     }
+
 
     /**
     * @brief All data concerning a camera worker.
@@ -160,6 +166,7 @@ namespace YACCP {
         cv::Mat fundamentalMatrix;
     };
 
+
     inline void to_json(nlohmann::json& j, const CamData::ViewData& v) {
         j = {
             {"windowX", v.windowX},
@@ -167,10 +174,12 @@ namespace YACCP {
         };
     }
 
+
     inline void from_json(const nlohmann::json& j, CamData::ViewData& v) {
         j.at("windowX").get_to(v.windowX);
         j.at("windowY").get_to(v.windowY);
     }
+
 
     inline void to_json(nlohmann::json& j, const CamData::CalibData& c) {
         if (!c.cameraMatrix.empty()) {
@@ -189,6 +198,7 @@ namespace YACCP {
         }
     }
 
+
     inline void from_json(const nlohmann::json& j, CamData::CalibData& c) {
         j.at("reprojError").get_to(c.reprojError);
         c.cameraMatrix = matFrom2dArray(j.at("cameraMatrix"));
@@ -197,6 +207,7 @@ namespace YACCP {
         for (const auto& rv : j.at("rvecs")) c.rvecs.emplace_back(vec3FromArray(rv));
         for (const auto& tv : j.at("tvecs")) c.tvecs.emplace_back(vec3FromArray(tv));
     }
+
 
     inline void to_json(nlohmann::json& j, const CamData::Info& i) {
         j = {
@@ -215,6 +226,7 @@ namespace YACCP {
         };
     }
 
+
     inline void from_json(const nlohmann::json& j, CamData::Info& i) {
         j.at("camName").get_to(i.camName);
         j.at("camId").get_to(i.camIndexId);
@@ -225,14 +237,17 @@ namespace YACCP {
         if (j.contains("calibration") && !j.at("calibration").is_null()) j.at("calibration").get_to(i.calibData);
     }
 
+
     inline void to_json(nlohmann::json& j, const CamData& c) {
         j = c.info;
         // runtimeData intentionally excluded
     }
 
+
     inline void from_json(const nlohmann::json& j, CamData& c) {
         j.at("info").get_to(c.info);
     }
+
 
     inline void to_json(nlohmann::json& j, const StereoCalibData& s) {
         j = {
@@ -244,6 +259,7 @@ namespace YACCP {
             {"fundamentalMatrix", matTo2dArray(s.fundamentalMatrix)}
         };
     }
+
 
     inline void from_json(const nlohmann::json& j, StereoCalibData& s) {
         s.camLeftId = j.at("camLeftId");

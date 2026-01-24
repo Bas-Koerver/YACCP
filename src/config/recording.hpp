@@ -16,8 +16,8 @@ namespace YACCP::Config {
     };
 
     inline std::unordered_map<std::string, WorkerTypes> workerTypesMap{
-            {"prophesee", WorkerTypes::prophesee},
-            {"basler", WorkerTypes::basler}
+        {"prophesee", WorkerTypes::prophesee},
+        {"basler", WorkerTypes::basler}
     };
 
     struct Basler {
@@ -53,11 +53,13 @@ namespace YACCP::Config {
         };
     }
 
+
     inline void from_json(const nlohmann::json& j, Prophesee& p) {
         j.at("accumulationTime").get_to(p.accumulationTime);
         j.at("fallingEdgePolarity").get_to(p.fallingEdgePolarity);
         j.at("saveEventFile").get_to(p.saveEventFile);
     }
+
 
     inline void to_json(nlohmann::json& j, const RecordingConfig::Worker& w) {
         j = {
@@ -70,7 +72,8 @@ namespace YACCP::Config {
 
                        if constexpr (std::is_same_v<T, Basler>) {
                            j["type"] = "basler";
-                       } else if constexpr (std::is_same_v<T, Prophesee>) {
+                       } else if constexpr (
+                           std::is_same_v<T, Prophesee>) {
                            j["type"] = "prophesee";
                            nlohmann::json bj(workerBackend);
                            j.update(bj);
@@ -78,6 +81,7 @@ namespace YACCP::Config {
                    },
                    w.configBackend);
     }
+
 
     inline void from_json(const nlohmann::json& j, RecordingConfig::Worker& w) {
         j.at("placement").get_to(w.placement);
@@ -96,6 +100,7 @@ namespace YACCP::Config {
         }
     }
 
+
     inline void to_json(nlohmann::json& j, const RecordingConfig& r) {
         j = {
             {"fps", r.fps},
@@ -104,11 +109,13 @@ namespace YACCP::Config {
         };
     }
 
+
     inline void from_json(const nlohmann::json& j, RecordingConfig& r) {
         j.at("fps").get_to(r.fps);
         j.at("masterWorker").get_to(r.masterWorker);
-        r.workers = j.at("workers").get<std::vector<RecordingConfig::Worker>>();
+        r.workers = j.at("workers").get<std::vector<RecordingConfig::Worker> >();
     }
+
 
     WorkerTypes stringToWorkerType(std::string worker);
 

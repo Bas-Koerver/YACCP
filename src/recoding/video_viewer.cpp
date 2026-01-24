@@ -6,12 +6,14 @@
 #include <metavision/sdk/ui/utils/event_loop.h>
 #include <metavision/sdk/ui/utils/window.h>
 
+
 cv::Scalar getColourGradient(int index, int maxIndex) {
     const double ratio{255.0 / (static_cast<double>(maxIndex) / 2.0)};
     const int red = std::min(255, static_cast<int>(std::round(2 * 255 - ratio * index)));
     const int green = std::min(255, static_cast<int>(std::round(ratio * index)));
     return cv::Scalar(46., green, red);
 }
+
 
 void printKeyMap() {
     std::cout <<
@@ -27,12 +29,14 @@ void printKeyMap() {
     std::cout << "\n\n";
 }
 
+
 namespace YACCP {
     template <typename T>
     T sumVector(std::vector<T>& dimVector, int stop) {
         auto end = dimVector.begin() + stop;
         return std::reduce(dimVector.begin(), end);
     }
+
 
     VideoViewer::VideoViewer(std::stop_source stopSource,
                              int viewsHorizontal,
@@ -55,6 +59,7 @@ namespace YACCP {
           cornerMin_(cornerMin) {
     }
 
+
     void VideoViewer::processFrame(std::stop_token stopToken,
                                    CamData& camData,
                                    const int camRef,
@@ -75,7 +80,10 @@ namespace YACCP {
                 Utility::CharucoResults charucoResults{Utility::findBoard(charucoDetector_, grayFrame, 0)};
 
                 if (!charucoResults.markerIds.empty())
-                    cv::aruco::drawDetectedMarkers(localFrame, charucoResults.markerCorners, charucoResults.markerIds);
+                    cv::aruco::drawDetectedMarkers(
+                        localFrame,
+                        charucoResults.markerCorners,
+                        charucoResults.markerIds);
                 if (!charucoResults.charucoIds.empty())
                     cv::aruco::drawDetectedCornersCharuco(localFrame,
                                                           charucoResults.charucoCorners,
@@ -87,7 +95,8 @@ namespace YACCP {
         }
     }
 
-    std::tuple<std::vector<int>, std::vector<int>> VideoViewer::calculateBiggestDims() const {
+
+    std::tuple<std::vector<int>, std::vector<int> > VideoViewer::calculateBiggestDims() const {
         // Calculate how many vertical rows their will be based on the amount of cameras and the set amount of cameras
         // showed horizontally.
         const int viewsVertical = static_cast<const int>(std::ceil(
@@ -119,6 +128,7 @@ namespace YACCP {
         return {maxWidthVec, maxHeightVec};
     }
 
+
     std::tuple<int, int> VideoViewer::calculateRowColumnIndex(int camIndex) const {
         // Determine from which row the max height needs to be calculated, based on the given camera index.
         int rowIndex = static_cast<int>(
@@ -128,6 +138,7 @@ namespace YACCP {
 
         return {rowIndex, columnIndex};
     }
+
 
     std::vector<cv::Point> VideoViewer::correctCoordinates(const ValidatedCornersData& validatedCornersData) {
         cv::Point2f offset{
@@ -142,10 +153,11 @@ namespace YACCP {
         return correctedCorners;
     }
 
+
     void VideoViewer::start() {
         std::vector<int> camRefs;
         std::vector<std::jthread> threads;
-        std::vector<std::vector<cv::Point>> pts;
+        std::vector<std::vector<cv::Point> > pts;
         std::atomic camDetectMode = -2;
         std::atomic detectLayerMode = true;
         std::atomic detectLayerClean = false;
@@ -183,14 +195,15 @@ namespace YACCP {
             );
         }
 
-
         double scaleX{static_cast<double>(resolutionWidth_) / frameComposer_.get_total_width()};
         double scaleY{static_cast<double>(resolutionHeight_) / frameComposer_.get_total_height()};
         double scale{std::min(scaleX, scaleY)};
         Utility::AlternativeBuffer buffer;
-        buffer.enable(); // BUG: There is a printing race at the moment between enabling this buffer and the camera threads printing the cameras their using.
-        printKeyMap(); // TODO: Make this a more global function where other functions can supply a vector of keybindings
-                       // TODO: Print pretty with tabulate?
+        buffer.enable();
+        // BUG: There is a printing race at the moment between enabling this buffer and the camera threads printing the cameras their using.
+        printKeyMap();
+        // TODO: Make this a more global function where other functions can supply a vector of keybindings
+        // TODO: Print pretty with tabulate?
 
         int width{(frameComposer_.get_total_width())};
         int height{(frameComposer_.get_total_height())};
@@ -288,7 +301,6 @@ namespace YACCP {
                 }
             );
         }
-
 
         while (!stopToken_.stop_requested()) {
             bool layerClean{detectLayerClean.load(std::memory_order_relaxed)};

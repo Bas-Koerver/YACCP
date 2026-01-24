@@ -24,16 +24,19 @@ namespace YACCP {
         }
     }
 
+
     void configureBiases(Metavision::Device& device) {
         auto* biases = device.get_facility<::Metavision::I_LL_Biases>();
         (void)biases->set("bias_diff_off", 56);
         (void)biases->set("bias_diff_on", 56);
     }
 
+
     void configureTimingInterfaces(Metavision::Device& device) {
         auto i_trigger_in = device.get_facility<Metavision::I_TriggerIn>();
         (void)i_trigger_in->enable(Metavision::I_TriggerIn::Channel::Main);
     }
+
 
     void configureFacilities(Metavision::Camera& camera) {
         Metavision::Device& device = camera.get_device();
@@ -41,6 +44,7 @@ namespace YACCP {
         // TODO: Handle scenarios where the camera doesn't support external triggers
         configureTimingInterfaces(device);
     }
+
 
     void printCurrentDevice(Metavision::Camera& cam, CamData& camData) {
         auto& device = cam.get_device();
@@ -58,14 +62,17 @@ namespace YACCP {
         }
     }
 
+
     PropheseeCamWorker::PropheseeCamWorker(std::stop_source stopSource,
                                            std::vector<CamData>& camDatas,
                                            Config::RecordingConfig& recordingConfig,
                                            const Config::Prophesee& configBackend,
                                            int index,
                                            const std::filesystem::path& jobPath)
-        : CameraWorker(stopSource, camDatas, recordingConfig, index, jobPath), configBackend_(configBackend) {
+        : CameraWorker(stopSource, camDatas, recordingConfig, index, jobPath),
+          configBackend_(configBackend) {
     }
+
 
     void PropheseeCamWorker::listAvailableSources() {
         Metavision::AvailableSourcesList sources{Metavision::Camera::list_online_sources()};
@@ -102,7 +109,8 @@ namespace YACCP {
                 // open the first available camera
                 cam = Metavision::Camera::from_first_available();
                 camData_.runtimeData.isOpen.store(true);
-            } catch (Metavision::CameraException& e) {
+            }
+            catch (Metavision::CameraException& e) {
                 std::cerr << e.what() << "\n";
                 camData_.runtimeData.exitCode = 2;
                 stopSource_.request_stop();
@@ -113,7 +121,8 @@ namespace YACCP {
                 // open the first available camera
                 cam = Metavision::Camera::from_serial(recordingConfig_.workers[index_].camUuid);
                 camData_.runtimeData.isOpen.store(true);
-            } catch (Metavision::CameraException& e) {
+            }
+            catch (Metavision::CameraException& e) {
                 std::cerr << e.what() << "\n";
                 camData_.runtimeData.exitCode = 2;
                 stopSource_.request_stop();
@@ -142,13 +151,11 @@ namespace YACCP {
             Metavision::CDFrameGenerator cdFrameGenerator{geometry.get_width(), geometry.get_height()};
             cdFrameGenerator.set_display_accumulation_time_us(configBackend_.accumulationTime);
 
-
             Metavision::OnDemandFrameGenerationAlgorithm onDemandFrameGenerator{
                 geometry.get_width(),
                 geometry.get_height(),
                 static_cast<uint32_t>(std::round(1e6 / static_cast<double>(recordingConfig_.fps)))
             };
-
 
             (void)cdFrameGenerator.start(
                 recordingConfig_.fps,

@@ -1,13 +1,32 @@
+## This is an example config file.
+# Required variables are shown as uncommented without any value behind it
+# Optional variables are commented with its default value.
+
+# –––––––-–––––––––---------------------------------- [oard] CONFIG ----------------------------------–––––––––––––––– #
+# Here the details about the board can be described
 [board]
-type = "charuco"
-squares_x = 7
-squares_y = 5
-square_pixel_length = 100
-marker_pixel_length = 70
-margin_size = 0
-border_bits = 1
-square_length = 0.0295
-marker_length = 0.0206
+# The board type at the moment this can only be "charuco"
+type =
+
+# The amount of squares in the x and y direction defaults are
+#squares_x = 7
+#squares_y = 5
+
+# These variables are needed for creating a board and are defined in pixel values
+#square_pixel_length = 100
+#marker_pixel_length = 70
+
+# Margins are the space between the edge of the image and the board itself, default value is
+# the square_pixel_length - marker_pixel_length
+#margin_size = 30
+
+# Defines how many bits/pixels wide the border will be of the charuco markers
+#border_bits = 1
+
+# These values are important from recording and onward, they need to be physically measured on the screen you will be
+# showing your board on
+square_length =
+marker_length =
 
 [detection]
 #Dictionary options:
@@ -16,15 +35,18 @@ marker_length = 0.0206
 #DICT_6X6_50=8, DICT_6X6_100=9, DICT_6X6_250=10, DICT_6X6_1000=11,
 #DICT_7X7_50=12, DICT_7X7_100=13, DICT_7X7_250=14, DICT_7X7_1000=15,
 #DICT_ARUCO_ORIGINAL = 16
-charuco_dictionary = 8
-detection_interval = 2
-minimum_corner_fraction = 0.125
+#charuco_dictionary = 8
+#detection_interval = 2
+#minimum_corner_fraction = 0.125
 
-
+# Here you can customise the ChArUco detection parameters, an explanation on what each value does is described by OpenCv:
+# https://docs.opencv.org/4.13.0/df/d01/structcv_1_1aruco_1_1CharucoParameters.html
 [detection.charuco_parameters]
 #refine = false
 #min_markers = 2
 
+# Here you can customise the aruco detection parameters, an explanation on what each value does is described by OpenCv:
+# https://docs.opencv.org/4.13.0/d1/dcd/structcv_1_1aruco_1_1DetectorParameters.html
 [detection.detector_parameters]
 #adaptiveThreshWinSizeMin = 3
 #adaptiveThreshWinSizeMax = 23
@@ -76,12 +98,6 @@ save_event_file = true # Optional
 falling_edge_polarity = 1
 cam_uuid = "9123" # Optional
 
-
-
-
-
 [viewing]
 views_horizontal = 3
-
-[calibration]
 

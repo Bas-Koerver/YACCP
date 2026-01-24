@@ -6,8 +6,8 @@
 
 
 namespace YACCP::Executor {
-    void runBoardCreation(CLI::CliCmdConfig& cliCmdConfig,
-                          std::filesystem::path path,
+    void runBoardCreation(const CLI::CliCmdConfig& cliCmdConfig,
+                          const std::filesystem::path& path,
                           const std::stringstream& dateTime) {
         const std::filesystem::path dataPath{path / "data"};
 
@@ -18,7 +18,6 @@ namespace YACCP::Executor {
             std::filesystem::path jobPath;
             Config::FileConfig fileConfig;
 
-
             // If no job ID is given create new folder and load TOML config.
             if (cliCmdConfig.boardCreationCmdConfig.jobId.empty()) {
                 // Load config from TOML file
@@ -27,8 +26,8 @@ namespace YACCP::Executor {
                 std::cout << "No job ID given, creating a new one.\n";
                 jobPath = dataPath / ("job_" + dateTime.str());
                 std::filesystem::create_directories(jobPath);
-                // If job ID is given, load the JSON config from the given job ID
             } else {
+                // If job ID is given, load the JSON config from the given job ID
                 // Otherwise generate a board for the given job ID
                 jobPath = dataPath / cliCmdConfig.boardCreationCmdConfig.jobId;
 

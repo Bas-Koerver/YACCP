@@ -14,6 +14,7 @@
 #include <CLI/App.hpp>
 #include <GLFW/glfw3.h>
 
+
 int main(int argc, char** argv) {
     // Decrease log level to warning for release builds.
 #ifdef NDEBUG
@@ -44,11 +45,12 @@ int main(int argc, char** argv) {
     std::filesystem::path path = workingDir / cliCmdConfig.appCmdConfig.userPath;
     auto returnCode{0};
 
-
-    if (*cliCmds.boardCreationCmd) {
+    cliCmdConfig.boardCreationCmdConfig.showAvailableJobs = true;
+    if (*cliCmds.boardCreationCmd || true) {
         try {
             YACCP::Executor::runBoardCreation(cliCmdConfig, path, dateTime);
-        } catch (const std::exception& err) {
+        }
+        catch (const std::exception& err) {
             std::cerr << err.what() << "\n";
         }
     }
@@ -56,16 +58,17 @@ int main(int argc, char** argv) {
     if (*cliCmds.recordingCmd) {
         try {
             returnCode = YACCP::Executor::runRecording(cliCmdConfig, path, dateTime);
-        } catch (const std::exception& err) {
+        }
+        catch (const std::exception& err) {
             std::cerr << err.what() << "\n";
         }
     }
 
-
     if (*cliCmds.validationCmd) {
         try {
             YACCP::Executor::runValidation(cliCmdConfig, path, dateTime);
-        } catch (const std::exception& err) {
+        }
+        catch (const std::exception& err) {
             std::cerr << err.what() << "\n";
         }
     }
@@ -73,7 +76,9 @@ int main(int argc, char** argv) {
     if (*cliCmds.calibrationCmds.calibration) {
         try {
             YACCP::Executor::runCalibration(cliCmdConfig, cliCmds, path, dateTime);
-        } catch (const std::exception& err) {
+        }
+        catch (const std::exception&
+            err) {
             std::cerr << err.what() << "\n";
         }
     }

@@ -25,6 +25,7 @@ namespace YACCP::Executor {
         return stopCode;
     }
 
+
     int runRecording(CLI::CliCmdConfig& cliCmdConfig, std::filesystem::path path, const std::stringstream& dateTime) {
         const std::filesystem::path dataPath{path / "data"};
 
@@ -137,7 +138,7 @@ namespace YACCP::Executor {
             auto numCams{static_cast<int>(fileConfig.recordingConfig.workers.size())};
             std::vector<CamData> camDatas(numCams);
             std::vector<std::jthread> threads;
-            std::vector<std::unique_ptr<CameraWorker>> cameraWorkers(numCams);
+            std::vector<std::unique_ptr<CameraWorker> > cameraWorkers(numCams);
             moodycamel::ReaderWriterQueue<ValidatedCornersData> valCornersQ{100};
 
             (void)std::filesystem::create_directories(jobPath / "images" / "raw");
@@ -172,7 +173,9 @@ namespace YACCP::Executor {
 
                 if (camDatas[index].info.isMaster) continue;
                 auto* worker = cameraWorkers[index].get();
-                threads.emplace_back([worker] { worker->start(); });
+                threads.emplace_back([worker] {
+                    worker->start();
+                });
             }
 
             // Wait till all slave cameras have started
@@ -197,7 +200,9 @@ namespace YACCP::Executor {
             // Start the master camera
             {
                 auto* worker = cameraWorkers[fileConfig.recordingConfig.masterWorker].get();
-                threads.emplace_back([worker] { worker->start(); });
+                threads.emplace_back([worker] {
+                    worker->start();
+                });
             }
 
             // Before the videoViewer can be started, the master camera needs to be running first,

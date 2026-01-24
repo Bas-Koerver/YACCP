@@ -19,6 +19,7 @@ namespace YACCP {
 
         void start() override;
 
+
     private:
         const Config::Prophesee& configBackend_;
         int requestedFrame_{-1};

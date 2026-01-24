@@ -1,53 +1,62 @@
 #include "create_board.hpp"
 
+#include "../global_variables/config_defaults.hpp"
+#include "../global_variables/program_defaults.hpp"
+
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
-namespace YACCP {
-    void CreateBoard::generateVideo(const cv::Mat& image, cv::Size size, std::filesystem::path jobPath) {
-        const std::string filename = (jobPath / "board.mp4").string();
-        constexpr auto fps{60.0};
+namespace {
+    void generateVideo(const cv::Mat& image, const cv::Size size, const std::filesystem::path& jobPath) {
+        const std::string filename{(jobPath / YACCP::GlobalVariables::boardVideoFileName).string()};
         const int codec{cv::VideoWriter::fourcc('a', 'v', 'c', '1')};
 
         cv::Mat imageBgr;
         cv::cvtColor(image, imageBgr, cv::COLOR_GRAY2BGR);
 
-        cv::Mat blankImage{cv::Mat::zeros(size, CV_8UC3)};
-        cv::VideoWriter writer(filename, codec, fps, size, true);
+        const cv::Mat blankImage{cv::Mat::zeros(size, CV_8UC3)};
+        cv::VideoWriter writer(filename, codec, static_cast<double>(YACCP::GlobalVariables::videoFps), size, true);
 
         if (!writer.isOpened()) {
-            std::cout << "Could not open the output video for write: " << filename << std::endl;
-            return;
+            throw std::runtime_error{"Could not open the output video for write: " + filename + "\n"};
         }
 
-        for (int i{0}; i < fps * (10 >> 1); i++) {
+        // Ten-second video.
+        for (auto i{0}; i < YACCP::GlobalVariables::videoFps * 5; i++) {
             writer.write(imageBgr);
             writer.write(blankImage);
         }
         writer.release();
     }
+}
 
-    void CreateBoard::listJobs(const std::filesystem::path& dataPath) {
-        std::cout << "jobs missing a board image and/or video: \n";
+namespace YACCP::CreateBoard {
+    void listJobs(const std::filesystem::path& dataPath) {
+        std::cout << "Jobs missing a board image and/or video: \n";
         for (auto const& entry : std::filesystem::directory_iterator(dataPath)) {
-            if (!entry.is_directory()) continue;
+            if (!entry.is_directory()) {
+                continue;
+            }
 
-            std::filesystem::path rawPath = entry.path() / "images" / "raw";
+            const bool jobDataFound{std::filesystem::exists(entry.path() / GlobalVariables::jobDataFileName)};
+            const bool imageFound{std::filesystem::exists(entry.path() / GlobalVariables::boardImageFileName)};
+            const bool videoFound{std::filesystem::exists(entry.path() / GlobalVariables::boardVideoFileName)};
 
-            const bool jobDataFound{!(entry.path() / "job_data.json").empty()};
-            const bool imageFound{!(entry.path() / "board.png").empty()};
-            const bool videoFound{!(entry.path() / "video.mp4").empty()};
-
-            if (!jobDataFound || (imageFound && videoFound)) continue;
+            if (!jobDataFound || (imageFound && videoFound)) {
+                continue;
+            }
 
             std::cout << "  " << entry.path().filename() << "\n";
         }
     }
 
-    void CreateBoard::charuco(const Config::FileConfig& fileConfig,
-                              const CLI::BoardCreationCmdConfig& boardCreationConfig,
-                              const std::filesystem::path& jobPath) {
+
+    // TODO: add different calibration patterns: https://github.com/opencv/opencv/blob/74addff3d065e53ce2ea16e2861d7711fb549780/samples/cpp/tutorial_code/calib3d/camera_calibration/camera_calibration.cpp#L156
+
+    void charuco(const Config::FileConfig& fileConfig,
+                 const CLI::BoardCreationCmdConfig& boardCreationConfig,
+                 const std::filesystem::path& jobPath) {
         const cv::aruco::Dictionary dictionary{
             cv::aruco::getPredefinedDictionary(fileConfig.detectionConfig.openCvDictionaryId)
         };
