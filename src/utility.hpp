@@ -79,6 +79,8 @@ namespace YACCP::Utility {
 
     [[nodiscard]] std::ifstream openFile(const std::filesystem::path& path, const std::string& fileName);
 
+    void checkDataPath(const std::filesystem::path& dataPath);
+
     void checkJobPath(const std::filesystem::path& dataPath, const std::string& jobId);
 
     void checkJobDataAvailable(const std::filesystem::path& jobPath);

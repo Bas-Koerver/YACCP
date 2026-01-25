@@ -4,7 +4,7 @@ namespace YACCP::CLI {
     ::CLI::App* addBoardCreationCmd(::CLI::App& app, BoardCreationCmdConfig& config) {
         ::CLI::App* subCmd = app.add_subcommand("create-board", "Board creation");
 
-        subCmd->add_flag("-l, --show-jobs", config.showAvailableJobs, "Show jobs missing a board image and/or video");
+        subCmd->add_flag("-l, --list", config.showAvailableJobs, "List jobs missing a board image and/or video");
 
         subCmd->add_option("-j, --job-id", config.jobId, "Give a specific job ID to create a board for.")
               ->default_str("Creates a new job");

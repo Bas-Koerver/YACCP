@@ -28,20 +28,28 @@ namespace YACCP {
     void CameraWorker::listJobs(const std::filesystem::path& dataPath) {
         std::cout << "Jobs without recording data: \n";
         for (auto const& entry : std::filesystem::directory_iterator(dataPath)) {
-            if (!entry.is_directory()) continue;
+            if (!entry.is_directory()) {
+                continue;
+            }
 
             // Check of files present in the raw folder.
-            if (Utility::isNonEmptyDirectory(entry.path() / "images" / "raw")) continue;
+            if (Utility::isNonEmptyDirectory(entry.path() / "images" / "raw")) {
+                continue;
+            }
 
             std::cout << "  " << entry.path().filename() << "\n";
         }
 
         std::cout << "\nJobs already with recording data: \n";
         for (auto const& entry : std::filesystem::directory_iterator(dataPath)) {
-            if (!entry.is_directory()) continue;
+            if (!entry.is_directory()) {
+                continue;
+            }
 
             // Check of files present in the raw folder.
-            if (!Utility::isNonEmptyDirectory(entry.path() / "images" / "raw")) continue;
+            if (!Utility::isNonEmptyDirectory(entry.path() / "images" / "raw")) {
+                continue;
+            }
 
             std::cout << "  " << entry.path().filename() << "\n";
         }

@@ -41,9 +41,18 @@ namespace YACCP::CreateBoard {
                 continue;
             }
 
-            const bool jobDataFound{std::filesystem::exists(entry.path() / GlobalVariables::jobDataFileName)};
-            const bool imageFound{std::filesystem::exists(entry.path() / GlobalVariables::boardImageFileName)};
-            const bool videoFound{std::filesystem::exists(entry.path() / GlobalVariables::boardVideoFileName)};
+            const bool jobDataFound{
+                std::filesystem::exists(
+                    entry.path() / GlobalVariables::jobDataFileName)
+            };
+            const bool imageFound{
+                std::filesystem::exists(
+                    entry.path() / GlobalVariables::boardImageFileName)
+            };
+            const bool videoFound{
+                std::filesystem::exists(
+                    entry.path() / GlobalVariables::boardVideoFileName)
+            };
 
             if (!jobDataFound || (imageFound && videoFound)) {
                 continue;

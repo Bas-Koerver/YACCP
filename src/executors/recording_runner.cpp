@@ -4,17 +4,13 @@
 
 #include "../global_variables/program_defaults.hpp"
 
-// #include "../recoding/detection_validator.hpp"
-// #include "../recoding/job_data.hpp"
-// #include "../recoding/video_viewer.hpp"
-// #include "../recoding/recorders/camera_worker.hpp"
 #include "../recoding/recorders/basler_cam_worker.hpp"
 #include "../recoding/recorders/prophesee_cam_worker.hpp"
 
 #include <GLFW/glfw3.h>
 
 namespace YACCP::Executor {
-    int getWorstStopCode(const std::vector<YACCP::CamData>& camDatas) {
+    int getWorstStopCode(const std::vector<CamData>& camDatas) {
         auto stopCode{0};
         for (const auto& [info, runtimeData] : camDatas) {
             if (runtimeData.exitCode > stopCode) {
@@ -26,7 +22,9 @@ namespace YACCP::Executor {
     }
 
 
-    int runRecording(CLI::CliCmdConfig& cliCmdConfig, std::filesystem::path path, const std::stringstream& dateTime) {
+    int runRecording(CLI::CliCmdConfig& cliCmdConfig,
+                     const std::filesystem::path& path,
+                     const std::stringstream& dateTime) {
         const std::filesystem::path dataPath{path / "data"};
 
         if (cliCmdConfig.recordingCmdConfig.showAvailableCams) {
@@ -45,76 +43,78 @@ namespace YACCP::Executor {
             if (cliCmdConfig.recordingCmdConfig.jobId.empty()) {
                 std::cout << "No job ID given, checking if most recent job already has recording data\n";
                 // Get the most recent job
-                std::vector<std::filesystem::path> jobs;
+                std::filesystem::path jobPathMostRecent;
                 for (const auto& entry : std::filesystem::directory_iterator(dataPath)) {
-                    jobs.emplace_back(entry.path());
+                    if (!entry.is_directory()) {
+                        continue;
+                    }
+                    if (jobPathMostRecent.empty() || entry.path().filename() > jobPathMostRecent.filename()) {
+                        jobPathMostRecent = entry.path();
+                    }
                 }
-                std::filesystem::path jobPathMostRecent{jobs.back()};
 
+                // If most recent job already has recording data create a new job and use that job,
+                // otherwise use most recent job.
                 if (Utility::isNonEmptyDirectory(jobPathMostRecent / "images" / "raw")) {
                     Config::FileConfig tomlConfig;
                     std::cout <<
-                        "The most recent job ID already has recoding data, creating a new job and copying job_config.json from previous one. \n";
+                        "The most recent job ID already has recoding data, creating a new job and copying job config from previous one. \n";
                     jobPath = dataPath / ("job_" + dateTime.str());
-                    std::filesystem::create_directories(jobPath);
+                    (void)std::filesystem::create_directories(jobPath);
                     std::filesystem::copy(jobPathMostRecent / GlobalVariables::jobDataFileName,
                                           jobPath / GlobalVariables::jobDataFileName);
-
-                    // Load config from JSON file
-                    nlohmann::json j = Utility::loadJobDataFromFile(jobPath);
-                    j.at("config").get_to(fileConfig);
-
-                    // Load config from TOML file
-                    YACCP::Config::loadConfig(tomlConfig, path);
-
-                    fileConfig.viewingConfig = tomlConfig.viewingConfig;
                 } else {
                     jobPath = jobPathMostRecent;
-                    Config::FileConfig jsonConfig;
-
-                    // Load config from JSON file
-                    nlohmann::json j = Utility::loadJobDataFromFile(jobPath);
-                    j.at("config").get_to(jsonConfig);
-
-                    // Load config from TOML file
-                    YACCP::Config::loadConfig(fileConfig, path);
-
-                    if (std::tie(fileConfig.boardConfig.boardSize, fileConfig.detectionConfig.openCvDictionaryId) !=
-                        std::tie(jsonConfig.boardConfig.boardSize, jsonConfig.detectionConfig.openCvDictionaryId)) {
-                        std::cerr << "Warning configured TOML does not coincide with stored JSON\n"
-                            "This is a warning just to inform you that JSON config will be used for board setup\n";
-                    }
-                    fileConfig.boardConfig.boardSize = jsonConfig.boardConfig.boardSize;
-                    fileConfig.detectionConfig.openCvDictionaryId = jsonConfig.detectionConfig.openCvDictionaryId;
                 }
+
+                Config::FileConfig jsonConfig;
+
+                // Load config from JSON file
+                nlohmann::json j = Utility::loadJobDataFromFile(jobPath);
+                (void)j.at("config").get_to(jsonConfig);
+
+                // Load config from TOML file
+                YACCP::Config::loadConfig(fileConfig, path);
+
+                if (std::tie(fileConfig.boardConfig.boardSize, fileConfig.detectionConfig.openCvDictionaryId) !=
+                    std::tie(jsonConfig.boardConfig.boardSize, jsonConfig.detectionConfig.openCvDictionaryId)) {
+                    std::cerr << "Warning configured TOML does not coincide with stored JSON\n"
+                        "This is a warning just to inform you that JSON config will be used for board setup\n";
+                }
+                fileConfig.boardConfig.boardSize = jsonConfig.boardConfig.boardSize;
+                fileConfig.detectionConfig.openCvDictionaryId = jsonConfig.detectionConfig.openCvDictionaryId;
             } else {
                 jobPath = dataPath / cliCmdConfig.recordingCmdConfig.jobId;
-                Config::FileConfig tomlConfig;
-                if (!is_directory(jobPath)) {
-                    std::cerr << "Job: " << jobPath.string() << " does not exist in the given path: " << dataPath <<
-                        "\n";
-                }
+                Config::FileConfig jsonConfig;
+
+                Utility::checkJobPath(dataPath, cliCmdConfig.recordingCmdConfig.jobId);
 
                 if (Utility::isNonEmptyDirectory(jobPath / "images" / "raw")) {
                     std::cout <<
                         "There is already recording data present for this job ID, do you want to override it?  (y/n): \n";
-                }
 
-                if (Utility::askYesNo()) {
-                    std::filesystem::remove_all(jobPath / "images" / "raw");
-                } else {
-                    std::cout << "Aborting recording to avoid overwriting existing data.\n\n";
-                    return 0;
+                    if (Utility::askYesNo()) {
+                        (void)std::filesystem::remove_all(jobPath / "images" / "raw");
+                    } else {
+                        std::cout << "Aborting recording to avoid overwriting existing data.\n\n";
+                        return 0;
+                    }
                 }
 
                 // Load config from JSON file
                 nlohmann::json j = Utility::loadJobDataFromFile(jobPath);
-                j.at("config").get_to(fileConfig);
+                (void)j.at("config").get_to(jsonConfig);
 
                 // Load config from TOML file
-                YACCP::Config::loadConfig(tomlConfig, path);
+                YACCP::Config::loadConfig(fileConfig, path);
 
-                fileConfig.viewingConfig = tomlConfig.viewingConfig;
+                if (std::tie(fileConfig.boardConfig.boardSize, fileConfig.detectionConfig.openCvDictionaryId) !=
+                    std::tie(jsonConfig.boardConfig.boardSize, jsonConfig.detectionConfig.openCvDictionaryId)) {
+                    std::cerr << "Warning configured TOML does not coincide with stored JSON\n"
+                        "This is a warning just to inform you that JSON config will be used for board setup\n";
+                }
+                fileConfig.boardConfig.boardSize = jsonConfig.boardConfig.boardSize;
+                fileConfig.detectionConfig.openCvDictionaryId = jsonConfig.detectionConfig.openCvDictionaryId;
             }
 
             Utility::AlternativeBuffer buffer;

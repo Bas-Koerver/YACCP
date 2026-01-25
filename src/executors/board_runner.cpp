@@ -6,13 +6,14 @@
 
 
 namespace YACCP::Executor {
-    void runBoardCreation(const CLI::CliCmdConfig& cliCmdConfig,
-                          const std::filesystem::path& path,
-                          const std::stringstream& dateTime) {
+    int runBoardCreation(const CLI::CliCmdConfig& cliCmdConfig,
+                         const std::filesystem::path& path,
+                         const std::stringstream& dateTime) {
         const std::filesystem::path dataPath{path / "data"};
 
         // Show jobs that are missing a board image and/or video.
         if (cliCmdConfig.boardCreationCmdConfig.showAvailableJobs) {
+            Utility::checkDataPath(dataPath);
             CreateBoard::listJobs(dataPath);
         } else {
             std::filesystem::path jobPath;
@@ -31,11 +32,8 @@ namespace YACCP::Executor {
                 // Otherwise generate a board for the given job ID
                 jobPath = dataPath / cliCmdConfig.boardCreationCmdConfig.jobId;
 
-                // Check whether the given job exists.
-                if (!is_directory(jobPath)) {
-                    throw std::runtime_error(
-                        "Job: " + jobPath.string() + " does not exist in the given path: " + dataPath.string());
-                }
+                // Check whether the given job std::filesystem::exists.
+                Utility::checkJobPath(dataPath, cliCmdConfig.boardCreationCmdConfig.jobId);
 
                 // Load config from JSON file
                 nlohmann::json j = Utility::loadJobDataFromFile(jobPath);
@@ -47,5 +45,7 @@ namespace YACCP::Executor {
             // Save the board creation variables to a JSON
             Utility::saveJobDataToFile(jobPath, fileConfig);
         }
+
+        return 0;
     }
 } // YACCP::Executor

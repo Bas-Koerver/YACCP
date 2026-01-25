@@ -46,7 +46,9 @@ namespace YACCP::Calibration {
             std::string camDir{"cam_" + std::to_string(info.camIndexId)};
             std::filesystem::path camPath{jobPath / "images" / "verified" / camDir};
 
-            if (!exists(camPath)) throw std::runtime_error("Directory for " + camDir + " does not exist.");
+            if (!std::filesystem::exists(camPath))
+                throw std::runtime_error(
+                    "Directory for " + camDir + " does not exist.");
 
             if (!Utility::isNonEmptyDirectory(camPath))
                 throw std::runtime_error(
@@ -201,20 +203,20 @@ namespace YACCP::Calibration {
                     std::to_string(right) + "\n";
 
                 auto calibFlags{cv::CALIB_FIX_INTRINSIC};
-                cv::stereoCalibrate(allObjPoints,
-                                    allImgPointsLeft,
-                                    allImgPointsRight,
-                                    camDatas[left].info.calibData.cameraMatrix,
-                                    camDatas[left].info.calibData.distCoeffs,
-                                    camDatas[right].info.calibData.cameraMatrix,
-                                    camDatas[right].info.calibData.distCoeffs,
-                                    cv::Size(0, 0),
-                                    stereoCalibData.rotationMatrix,
-                                    stereoCalibData.translationMatrix,
-                                    stereoCalibData.essentialMatrix,
-                                    stereoCalibData.fundamentalMatrix,
-                                    cv::noArray(),
-                                    calibFlags);
+                (void)cv::stereoCalibrate(allObjPoints,
+                                          allImgPointsLeft,
+                                          allImgPointsRight,
+                                          camDatas[left].info.calibData.cameraMatrix,
+                                          camDatas[left].info.calibData.distCoeffs,
+                                          camDatas[right].info.calibData.cameraMatrix,
+                                          camDatas[right].info.calibData.distCoeffs,
+                                          cv::Size(0, 0),
+                                          stereoCalibData.rotationMatrix,
+                                          stereoCalibData.translationMatrix,
+                                          stereoCalibData.essentialMatrix,
+                                          stereoCalibData.fundamentalMatrix,
+                                          cv::noArray(),
+                                          calibFlags);
                 stereoCalibDatas.emplace_back(stereoCalibData);
             }
         }

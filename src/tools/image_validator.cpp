@@ -37,7 +37,9 @@ namespace YACCP {
     void ImageValidator::listJobs(const std::filesystem::path& dataPath) {
         std::cout << "Available jobs to validate: \n";
         for (auto const& entry : std::filesystem::directory_iterator(dataPath)) {
-            if (!entry.is_directory()) continue;
+            if (!entry.is_directory()) {
+                continue;
+            }
 
             std::filesystem::path rawPath = entry.path() / "images" / "raw";
             std::filesystem::path verifiedPath = entry.path() / "images" / "verified";
@@ -53,7 +55,9 @@ namespace YACCP {
 
         std::cout << "\nJobs already validated: \n";
         for (auto const& entry : std::filesystem::directory_iterator(dataPath)) {
-            if (!entry.is_directory()) continue;
+            if (!entry.is_directory()) {
+                continue;
+            }
 
             std::filesystem::path verifiedPath = entry.path() / "images" / "verified";
 
@@ -82,7 +86,9 @@ namespace YACCP {
         Config::FileConfig fileConfig;
 
         for (auto const& entry : std::filesystem::directory_iterator(jobPath_ / "images" / "raw")) {
-            if (!entry.is_directory()) continue;
+            if (!entry.is_directory()) {
+                continue;
+            }
             cams.push_back(entry.path().filename());
         }
         for (auto const& entry : std::filesystem::directory_iterator(jobPath_ / "images" / "raw" / cams[0])) {

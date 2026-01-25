@@ -3,8 +3,8 @@
 
 namespace YACCP::CLI {
     void addCli(CliCmdConfig& cliCmdConfig, CliCmds& cliCmds) {
-        cliCmds.app.description("Yet Another Camera Calibration Platform");
-        cliCmds.app.set_help_all_flag("--help-all", "Expanded help");
+        (void)cliCmds.app.description("Yet Another Camera Calibration Platform");
+        (void)cliCmds.app.set_help_all_flag("--help-all", "Expanded help");
 #ifdef NDEBUG
         cliCmds.app.require_subcommand(1);
 #endif
@@ -14,11 +14,10 @@ namespace YACCP::CLI {
         formatter->column_width(60);
 
         // Global CLI options and flags.
-        cliCmds.app.add_option("-p,--path",
-                               cliCmdConfig.appCmdConfig.userPath,
-                               "Path where config file is stored and where data directory will be placed")
-               ->default_str("Defaults to current dir")
-               ->check(::CLI::ExistingPath);
+        (void)cliCmds.app.add_option("-p,--path",
+                                     cliCmdConfig.appCmdConfig.userPath,
+                                     "Path where config file is stored and where data directory will be placed")
+                     ->check(::CLI::ExistingPath);
 
         // boardCreation CLI options
         cliCmds.boardCreationCmd = addBoardCreationCmd(cliCmds.app, cliCmdConfig.boardCreationCmdConfig);

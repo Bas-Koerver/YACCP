@@ -67,15 +67,22 @@ namespace YACCP::Utility {
     }
 
 
+    void checkDataPath(const std::filesystem::path& dataPath) {
+        if (!std::filesystem::exists(dataPath)) {
+            throw std::invalid_argument("The data directory does not exist yet");
+        }
+    }
+
+
     void checkJobPath(const std::filesystem::path& dataPath, const std::string& jobId) {
-        if (!exists(dataPath / jobId)) {
-            throw std::runtime_error("Job: " + jobId + " does not exist in the given path: " + dataPath.string());
+        if (!std::filesystem::exists(dataPath / jobId)) {
+            throw std::runtime_error("Job: '" + jobId + "' does not exist in the given path: " + dataPath.string());
         }
     }
 
 
     void checkJobDataAvailable(const std::filesystem::path& jobPath) {
-        if (!exists(jobPath / GlobalVariables::jobDataFileName)) {
+        if (!std::filesystem::exists(jobPath / GlobalVariables::jobDataFileName)) {
             throw std::runtime_error(
                 "No " + static_cast<std::string>(GlobalVariables::jobDataFileName) + " was found.");
         }

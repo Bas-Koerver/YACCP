@@ -10,7 +10,6 @@
 #include "executors/recording_runner.hpp"
 #include "executors/validation_runner.hpp"
 
-#include <csignal>
 #include <CLI/App.hpp>
 #include <GLFW/glfw3.h>
 
@@ -20,11 +19,13 @@ int main(int argc, char** argv) {
 #ifdef NDEBUG
     cv::utils::logging::setLogLevel(cv::utils::logging::LogLevel::LOG_LEVEL_WARNING);
 #endif
+    // Exitcode guidelines: https://tldp.org/LDP/abs/html/exitcodes.html
+    auto exitCode{0};
 
     // Try to initialise GLFW
-    if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW.\n";
-        raise(SIGABRT);
+    if (glfwInit() == GLFW_FALSE) {
+        std::cerr << "Failed to initialise GLFW.\n";
+        exitCode = 1;
     }
 
     /*
@@ -43,46 +44,46 @@ int main(int argc, char** argv) {
     auto workingDir = std::filesystem::current_path();
 
     std::filesystem::path path = workingDir / cliCmdConfig.appCmdConfig.userPath;
-    auto returnCode{0};
 
-    cliCmdConfig.boardCreationCmdConfig.generateVideo = true;
-    if (*cliCmds.boardCreationCmd || true) {
-        try {
-            YACCP::Executor::runBoardCreation(cliCmdConfig, path, dateTime);
+    if (exitCode == 0) {
+        if (*cliCmds.boardCreationCmd) {
+            try {
+                exitCode = YACCP::Executor::runBoardCreation(cliCmdConfig, path, dateTime);
+            }
+            catch (const std::exception& err) {
+                std::cerr << err.what() << "\n";
+            }
         }
-        catch (const std::exception& err) {
-            std::cerr << err.what() << "\n";
+
+        if (*cliCmds.recordingCmd) {
+            try {
+                exitCode = YACCP::Executor::runRecording(cliCmdConfig, path, dateTime);
+            }
+            catch (const std::exception& err) {
+                std::cerr << err.what() << "\n";
+            }
+        }
+
+        if (*cliCmds.validationCmd) {
+            try {
+                YACCP::Executor::runValidation(cliCmdConfig, path, dateTime);
+            }
+            catch (const std::exception& err) {
+                std::cerr << err.what() << "\n";
+            }
+        }
+
+        if (*cliCmds.calibrationCmds.calibration) {
+            try {
+                YACCP::Executor::runCalibration(cliCmdConfig, cliCmds, path, dateTime);
+            }
+            catch (const std::exception&
+                err) {
+                std::cerr << err.what() << "\n";
+            }
         }
     }
 
-    if (*cliCmds.recordingCmd) {
-        try {
-            returnCode = YACCP::Executor::runRecording(cliCmdConfig, path, dateTime);
-        }
-        catch (const std::exception& err) {
-            std::cerr << err.what() << "\n";
-        }
-    }
-
-    if (*cliCmds.validationCmd) {
-        try {
-            YACCP::Executor::runValidation(cliCmdConfig, path, dateTime);
-        }
-        catch (const std::exception& err) {
-            std::cerr << err.what() << "\n";
-        }
-    }
-
-    if (*cliCmds.calibrationCmds.calibration) {
-        try {
-            YACCP::Executor::runCalibration(cliCmdConfig, cliCmds, path, dateTime);
-        }
-        catch (const std::exception&
-            err) {
-            std::cerr << err.what() << "\n";
-        }
-    }
-
-    return returnCode;
+    return exitCode;
 }
 
