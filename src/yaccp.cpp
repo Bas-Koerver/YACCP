@@ -32,9 +32,9 @@ int main(int argc, char** argv) {
      * CLI
      */
     YACCP::CLI::CliCmdConfig cliCmdConfig;
-    YACCP::CLI::CliCmds cliCmds;
-    YACCP::CLI::addCli(cliCmdConfig, cliCmds);
-    CLI11_PARSE(cliCmds.app, argc, argv);
+    CLI::App app{};
+    YACCP::CLI::CliCmds cliCmds{YACCP::CLI::addCli(cliCmdConfig, app)};
+    CLI11_PARSE(cliCmds.app(), argc, argv);
 
     /*
     * Global variable declaration
@@ -43,10 +43,10 @@ int main(int argc, char** argv) {
     dateTime = YACCP::Utility::getCurrentDateTime();
     auto workingDir = std::filesystem::current_path();
 
-    std::filesystem::path path = workingDir / cliCmdConfig.appCmdConfig.userPath;
+    std::filesystem::path path = workingDir / cliCmdConfig.appCmdConfig().userPath();
 
     if (exitCode == 0) {
-        if (*cliCmds.boardCreationCmd) {
+        if (cliCmds.boardCreationCmd()) {
             try {
                 exitCode = YACCP::Executor::runBoardCreation(cliCmdConfig, path, dateTime);
             }
@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        if (*cliCmds.recordingCmd) {
+        if (cliCmds.recordingCmd()) {
             try {
                 exitCode = YACCP::Executor::runRecording(cliCmdConfig, path, dateTime);
             }
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        if (*cliCmds.validationCmd) {
+        if (cliCmds.validationCmd()) {
             try {
                 YACCP::Executor::runValidation(cliCmdConfig, path, dateTime);
             }
@@ -73,8 +73,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        cliCmdConfig.calibrationCmdConfig.jobId = "job_2026-01-21_17-08-42";
-        if (*cliCmds.calibrationCmds.calibration || true) {
+        if (cliCmds.calibrationCmds().calibration()) {
             try {
                 YACCP::Executor::runCalibration(cliCmdConfig, cliCmds, path, dateTime);
             }

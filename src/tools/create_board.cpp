@@ -93,11 +93,11 @@ namespace YACCP::CreateBoard {
                             fileConfig.boardConfig.marginSize,
                             fileConfig.boardConfig.borderBits);
 
-        if (boardCreationConfig.generateImage) {
+        if (boardCreationConfig.generateImage()) {
             (void)cv::imwrite((jobPath / "board.png").string(), boardImage);
         }
 
-        if (boardCreationConfig.generateVideo) {
+        if (boardCreationConfig.generateVideo()) {
             generateVideo(boardImage, imageSize, jobPath);
         }
     }

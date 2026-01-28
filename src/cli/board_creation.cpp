@@ -1,55 +1,38 @@
 #include "board_creation.hpp"
 
 namespace YACCP::CLI {
-    ::CLI::App* addBoardCreationCmd(::CLI::App& app, BoardCreationCmdConfig& config) {
+    ::CLI::App& addBoardCreationCmd(::CLI::App& app, BoardCreationCmdConfig& config) {
         ::CLI::App* subCmd = app.add_subcommand("create-board", "Board creation");
 
-        subCmd->add_flag("-l, --list", config.showAvailableJobs, "List jobs missing a board image and/or video");
+        (void)subCmd->add_flag("-l, --list",
+                               [&config](const bool& v) {
+                                   config.setShowAvailableJobs(v);
+                               },
+                               "List jobs missing a board image and/or video");
 
-        subCmd->add_option("-j, --job-id", config.jobId, "Give a specific job ID to create a board for.")
-              ->default_str("Creates a new job");
+        (void)subCmd->add_option_function<std::string>("-j, --job-id",
+                                                       [&config](const std::string& v) {
+                                                           config.setJobId(v);
+                                                       },
+                                                       "Give a specific job ID to create a board for.")
+                    ->default_str("Creates a new job");
 
-        // subCmd->add_option("-s, --square-length", config.squareLength, "The square length in pixels")
-        //       ->default_val(config.squareLength)
-        //       ->check(::CLI::PositiveNumber);
-        //
-        // subCmd
-        //     ->add_option("-m, --marker-length", config.markerLength, "The ArUco marker length in pixels")
-        //     ->default_val(config.markerLength)
-        //     ->check(::CLI::PositiveNumber);
-        //
-        // subCmd
-        //     ->add_option("-e, --marker-border",
-        //                  config.marginSize,
-        //                  "The border size (margins) of the ArUco marker in pixels")
-        //     ->default_str("square-length - marker-length")
-        //     ->check(::CLI::PositiveNumber);
-        //
-        // subCmd
-        //     ->add_option("-b, --border-point",
-        //                  config.borderBits,
-        //                  "The amount of points (pixels) for the border")
-        //     ->default_val(config.borderBits)
-        //     ->check(::CLI::PositiveNumber);
+        (void)subCmd
+              ->add_flag("!-i, !--image",
+                         [&config](bool v) {
+                             config.setGenerateImage(v);
+                         },
+                         "Whether to generate an image of the generated board")
+              ->default_str("true");
 
-        subCmd
-            ->add_flag("!-i, !--image",
-                       config.generateImage,
-                       "Whether to generate an image of the generated board")
-            ->default_str("true");
+        (void)subCmd
+              ->add_flag("-v, --video",
+                         [&config](bool v) {
+                             config.setGenerateVideo(v);
+                         },
+                         "Whether to generate an event video of the generated board")
+              ->default_str("false");
 
-        subCmd
-            ->add_flag("-v, --video",
-                       config.generateVideo,
-                       "Whether to generate an event video of the generated board")
-            ->default_str("false");
-
-        // subCmd->parse_complete_callback([&config] {
-        //     if (!config.marginSize) {
-        //         config.marginSize = config.squareLength - config.markerLength;
-        //     }
-        // });
-
-        return subCmd;
+        return *subCmd;
     }
 } // namespace YACCP::CLI

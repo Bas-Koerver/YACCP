@@ -1,21 +1,29 @@
 #include "recording.hpp"
 
 namespace YACCP::CLI {
-    ::CLI::App* addRecordingCmd(::CLI::App& app, RecordingCmdConfig& config) {
+    ::CLI::App& addRecordingCmd(::CLI::App& app, RecordingCmdConfig& config) {
         ::CLI::App* subCmd = app.add_subcommand("record", "Record detections");
+        // ::CLI::Option_group* group = app.add_option_group("listGroup");
 
-        subCmd->add_flag("-l, --list", config.showAvailableJobs, "List available jobs");
-        subCmd->add_option("-j, --job-id", config.jobId, "Give a specific job ID to record to")->default_str(
-            "Latest job ID");
-        subCmd->add_flag("-c, --show-cams", config.showAvailableCams, "Show all available cameras");
+        // TODO: Check with and without const
+        (void)subCmd->add_flag("-l, --list",
+                               [&config](const bool v) {
+                                   config.setShowAvailableJobs(v);
+                               },
+                               "List available jobs");
+        (void)subCmd->add_flag("-c, --show-cams",
+                               [&config](const bool v) {
+                                   config.setShowAvailableCams(v);
+                               },
+                               "Show all available cameras");
+        (void)subCmd->add_option_function<std::string>("-j, --job-id",
+                                                 [&config](const std::string& v) {
+                                                     config.setJobId(v);
+                                                 },
+                                                 "Give a specific job ID to record to")
+              ->default_str("Latest job ID");
+        (void)subCmd->require_option(-1);
 
-        subCmd->parse_complete_callback([&config] {
-            if (config.showAvailableJobs && config.showAvailableCams) {
-                throw std::runtime_error(
-                    "Show available jobs and show available cameras are mutually exclusive, you can only use one at a time\n");
-            }
-        });
-
-        return subCmd;
+        return *subCmd;
     }
 } // namespace YACCP

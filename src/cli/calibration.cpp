@@ -1,19 +1,32 @@
 #include "calibration.hpp"
 
 namespace YACCP::CLI {
+    CalibrationCmds::CalibrationCmds(::CLI::App& calibration, ::CLI::App& mono, ::CLI::App& stereo) noexcept :
+        calibration_(calibration),
+        mono_(mono),
+        stereo_(stereo) {
+    };
+
+
     CalibrationCmds addCalibrationCmds(::CLI::App& app, CalibrationCmdConfig& config) {
-        CalibrationCmds calibrationCmds;
+        ::CLI::App* const calibration = app.add_subcommand("calibrate", "Global calibration command");
+        ::CLI::App* mono = calibration->add_subcommand("mono", "Mono calibration");
+        ::CLI::App* stereo = calibration->add_subcommand("stereo", "stereo calibration");
 
-        calibrationCmds.calibration = app.add_subcommand("calibrate", "Global calibration command");
+        (void)calibration->add_flag("-l, --list",
+                                    [&config](const bool v) {
+                                        config.setShowAvailableJobs(v);
+                                    },
+                                    "List available jobs");
+        (void)calibration->add_option_function<std::string>("-j, --job-id",
+                                                            [&config](const std::string& v) {
+                                                                config.setJobId(v);
+                                                            },
+                                                            "Give a specific job ID to validate");
 
-        calibrationCmds.calibration->add_flag("-l, --list", config.showAvailableJobs, "List available jobs");
-        calibrationCmds.calibration->add_option("-j, --job-id", config.jobId, "Give a specific job ID to validate");
+        // https://github.com/CLIUtils/CLI11/issues/88#issuecomment-978694416
+        (void)calibration->require_option(1);
 
-        calibrationCmds.calibration->require_option(1);
-
-        calibrationCmds.mono = calibrationCmds.calibration->add_subcommand("mono", "Mono calibration");
-        calibrationCmds.stereo = calibrationCmds.calibration->add_subcommand("stereo", "stereo calibration");
-
-        return calibrationCmds;
+        return CalibrationCmds(*calibration, *mono, *stereo);
     }
 } // namespace YACCP::CLI

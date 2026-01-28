@@ -10,13 +10,13 @@ namespace YACCP::Executor {
                         std::filesystem::path path,
                         const std::string& dateTime) {
         const std::filesystem::path dataPath{path / "data"};
-        std::filesystem::path jobPath = dataPath / cliCmdConfig.calibrationCmdConfig.jobId;
+        std::filesystem::path jobPath = dataPath / cliCmdConfig.calibrationCmdConfig.jobId_;
 
-        Utility::checkJobPath(dataPath, cliCmdConfig.calibrationCmdConfig.jobId);
+        Utility::checkJobPath(dataPath, cliCmdConfig.calibrationCmdConfig.jobId_);
 
         // Check if the job has verified images
         if (!Utility::isNonEmptyDirectory(jobPath / "images" / "verified")) {
-            throw std::runtime_error("No verified images found for job: " + cliCmdConfig.calibrationCmdConfig.jobId);
+            throw std::runtime_error("No verified images found for job: " + cliCmdConfig.calibrationCmdConfig.jobId_);
         }
 
         // Load config from JSON file
