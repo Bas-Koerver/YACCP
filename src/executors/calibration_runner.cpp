@@ -40,7 +40,7 @@ namespace YACCP::Executor {
 
         // Variable setup based on config.
         cv::aruco::Dictionary dictionary{
-            cv::aruco::getPredefinedDictionary(fileConfig.detectionConfig.openCvDictionaryId)
+            cv::aruco::getPredefinedDictionary(fileConfig.detectionConfig.openCvArucoDictionaryId)
         };
         cv::aruco::CharucoParameters charucoParams;
         cv::aruco::DetectorParameters detParams;
@@ -52,7 +52,7 @@ namespace YACCP::Executor {
         };
         cv::aruco::CharucoDetector charucoDetector(board, charucoParams, detParams);
 
-        if (*cliCmds.calibrationCmds.mono || true) {
+        if (*cliCmds.calibrationCmds.mono) {
             // cameraCalibration.monoCalibrate(cliCmdConfig.calibrationCmdConfig.jobId);
             Calibration::monoCalibrate(charucoDetector, camDatas, fileConfig, jobPath);
         } else if (*cliCmds.calibrationCmds.stereo) {

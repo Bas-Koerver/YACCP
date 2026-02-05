@@ -346,7 +346,7 @@ if __name__ == '__main__':
     fy = camera_matrix_l[1, 1]
     cx = camera_matrix_l[0, 2]
     cy = camera_matrix_l[1, 2]
-    Z = 450/1000  # in meters
+    Z = 430/1000  # in meters
 
     pt = np.array([[[point0_0[0], point0_0[1]]]], dtype=np.float32)
     pt_ud = cv2.undistortPoints(pt, camera_matrix_l, dist_coefs_l, P=camera_matrix_l)

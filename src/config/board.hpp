@@ -19,18 +19,26 @@ namespace YACCP::Config {
     };
 
     struct BoardConfig {
+        BoardTypes boardType{};
         cv::Size boardSize{};
-        float squareLength{};
-        float markerLength{};
         int squarePixelLength{};
         int markerPixelLength{};
         int marginSize{};
         int borderBits{};
+        float squareLength{};
+        float markerLength{};
     };
+
+    BoardTypes stringToBoardType(std::string board);
+
+    std::string boardTypeToString(BoardTypes boardType);
+
+    void parseBoardConfig(const toml::table& tbl, BoardConfig& config, bool boardCreation);
 
 
     inline void to_json(nlohmann::json& j, const BoardConfig& b) {
         j = {
+            {"boardType", boardTypeToString(b.boardType)},
             {
                 "boardSize",
                 {
@@ -49,6 +57,7 @@ namespace YACCP::Config {
 
 
     inline void from_json(const nlohmann::json& j, BoardConfig& b) {
+        b.boardType = stringToBoardType(j.at("boardType").get<std::string>());
         j.at("boardSize").at("width").get_to(b.boardSize.width);
         j.at("boardSize").at("height").get_to(b.boardSize.height);
         j.at("squareLength").get_to(b.squareLength);
@@ -58,13 +67,6 @@ namespace YACCP::Config {
         j.at("marginSize").get_to(b.marginSize);
         j.at("borderBits").get_to(b.borderBits);
     }
-
-
-    BoardTypes stringToBoardType(std::string board);
-
-    std::string boardTypeToString(BoardTypes boardType);
-
-    void parseBoardConfig(const toml::table& tbl, BoardConfig& config, bool boardCreation);
 } // YACCP::Config
 
 #endif //YACCP_SRC_CONFIG_BOARD_HPP

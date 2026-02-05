@@ -197,12 +197,12 @@ namespace YACCP {
             camData_.runtimeData.isRunning.store(cam.IsGrabbing());
 
             if (camData_.info.isMaster) {
-                requestedFrame_ = 1 + recordingConfig_.fps * detectionInterval_;
-                for (auto& camData : camDatas_) {
-                    if (camData.info.isMaster) {
+                requestedFrame_ = 1 + recordingConfig_.fps * recordingConfig_.detectionInterval;
+                for (auto& [info, runtimeData] : camDatas_) {
+                    if (info.isMaster) {
                         continue;
                     }
-                    camData.runtimeData.frameRequestQ.enqueue(requestedFrame_);
+                    (void)runtimeData.frameRequestQ.enqueue(requestedFrame_);
                 }
 
                 while (cam.IsGrabbing() && !stopToken_.stop_requested()) {
@@ -226,16 +226,15 @@ namespace YACCP {
                         VerifyTask frameData;
                         frameData.id = requestedFrame_;
                         frameData.frame = localFrame.clone();
-                        camData_.runtimeData.frameVerifyQ.enqueue(frameData);
+                        (void)camData_.runtimeData.frameVerifyQ.enqueue(frameData);
 
-                        requestedFrame_ = localFrameIndex + recordingConfig_.fps * detectionInterval_;
-                        // lastRequestedFrame = requestedFrame_;
+                        requestedFrame_ = localFrameIndex + (recordingConfig_.fps * recordingConfig_.detectionInterval);
 
-                        for (auto& camData : camDatas_) {
-                            if (camData.info.isMaster) {
+                        for (auto& [info, runtimeData] : camDatas_) {
+                            if (info.isMaster) {
                                 continue;
                             }
-                            camData.runtimeData.frameRequestQ.enqueue(requestedFrame_);
+                            (void)runtimeData.frameRequestQ.enqueue(requestedFrame_);
                         }
                     }
                 }

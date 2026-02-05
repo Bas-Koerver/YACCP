@@ -151,6 +151,7 @@ namespace YACCP {
             // Communication
             moodycamel::ReaderWriterQueue<int> frameRequestQ{100};
             moodycamel::BlockingReaderWriterQueue<VerifyTask> frameVerifyQ{100};
+            std::exception_ptr e{};
         };
 
         // Camera placement in their respective IDs from left to right, IDs depend on the order of how they are defined.

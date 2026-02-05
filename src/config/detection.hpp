@@ -16,8 +16,8 @@ namespace cv::aruco {
 
 
     inline void from_json(const nlohmann::json& j, CharucoParameters& p) {
-        j.at("minMarkers").get_to(p.minMarkers);
-        j.at("tryRefineMarkers").get_to(p.tryRefineMarkers);
+        (void)j.at("minMarkers").get_to(p.minMarkers);
+        (void)j.at("tryRefineMarkers").get_to(p.tryRefineMarkers);
     }
 
 
@@ -60,45 +60,44 @@ namespace cv::aruco {
 
 
     inline void from_json(const nlohmann::json& j, DetectorParameters& p) {
-        j.at("adaptiveThreshWinSizeMin").get_to(p.adaptiveThreshWinSizeMin);
-        j.at("adaptiveThreshWinSizeMax").get_to(p.adaptiveThreshWinSizeMax);
-        j.at("adaptiveThreshWinSizeStep").get_to(p.adaptiveThreshWinSizeStep);
-        j.at("adaptiveThreshConstant").get_to(p.adaptiveThreshConstant);
-        j.at("minMarkerPerimeterRate").get_to(p.minMarkerPerimeterRate);
-        j.at("maxMarkerPerimeterRate").get_to(p.maxMarkerPerimeterRate);
-        j.at("polygonalApproxAccuracyRate").get_to(p.polygonalApproxAccuracyRate);
-        j.at("minCornerDistanceRate").get_to(p.minCornerDistanceRate);
-        j.at("minDistanceToBorder").get_to(p.minDistanceToBorder);
-        j.at("minMarkerDistanceRate").get_to(p.minMarkerDistanceRate);
-        j.at("cornerRefinementMethod").get_to(p.cornerRefinementMethod);
-        j.at("cornerRefinementWinSize").get_to(p.cornerRefinementWinSize);
-        j.at("cornerRefinementMaxIterations").get_to(p.cornerRefinementMaxIterations);
-        j.at("cornerRefinementMinAccuracy").get_to(p.cornerRefinementMinAccuracy);
-        j.at("markerBorderBits").get_to(p.markerBorderBits);
-        j.at("perspectiveRemovePixelPerCell").get_to(p.perspectiveRemovePixelPerCell);
-        j.at("perspectiveRemoveIgnoredMarginPerCell").get_to(p.perspectiveRemoveIgnoredMarginPerCell);
-        j.at("maxErroneousBitsInBorderRate").get_to(p.maxErroneousBitsInBorderRate);
-        j.at("minOtsuStdDev").get_to(p.minOtsuStdDev);
-        j.at("errorCorrectionRate").get_to(p.errorCorrectionRate);
-        j.at("aprilTagQuadDecimate").get_to(p.aprilTagQuadDecimate);
-        j.at("aprilTagQuadSigma").get_to(p.aprilTagQuadSigma);
-        j.at("aprilTagMinClusterPixels").get_to(p.aprilTagMinClusterPixels);
-        j.at("aprilTagMaxNmaxima").get_to(p.aprilTagMaxNmaxima);
-        j.at("aprilTagCriticalRad").get_to(p.aprilTagCriticalRad);
-        j.at("aprilTagMaxLineFitMse").get_to(p.aprilTagMaxLineFitMse);
-        j.at("aprilTagMinWhiteBlackDiff").get_to(p.aprilTagMinWhiteBlackDiff);
-        j.at("aprilTagDeglitch").get_to(p.aprilTagDeglitch);
-        j.at("detectInvertedMarker").get_to(p.detectInvertedMarker);
-        j.at("useAruco3Detection").get_to(p.useAruco3Detection);
-        j.at("minSideLengthCanonicalImg").get_to(p.minSideLengthCanonicalImg);
-        j.at("minMarkerLengthRatioOriginalImg").get_to(p.minMarkerLengthRatioOriginalImg);
+        (void)j.at("adaptiveThreshWinSizeMin").get_to(p.adaptiveThreshWinSizeMin);
+        (void)j.at("adaptiveThreshWinSizeMax").get_to(p.adaptiveThreshWinSizeMax);
+        (void)j.at("adaptiveThreshWinSizeStep").get_to(p.adaptiveThreshWinSizeStep);
+        (void)j.at("adaptiveThreshConstant").get_to(p.adaptiveThreshConstant);
+        (void)j.at("minMarkerPerimeterRate").get_to(p.minMarkerPerimeterRate);
+        (void)j.at("maxMarkerPerimeterRate").get_to(p.maxMarkerPerimeterRate);
+        (void)j.at("polygonalApproxAccuracyRate").get_to(p.polygonalApproxAccuracyRate);
+        (void)j.at("minCornerDistanceRate").get_to(p.minCornerDistanceRate);
+        (void)j.at("minDistanceToBorder").get_to(p.minDistanceToBorder);
+        (void)j.at("minMarkerDistanceRate").get_to(p.minMarkerDistanceRate);
+        (void)j.at("cornerRefinementMethod").get_to(p.cornerRefinementMethod);
+        (void)j.at("cornerRefinementWinSize").get_to(p.cornerRefinementWinSize);
+        (void)j.at("cornerRefinementMaxIterations").get_to(p.cornerRefinementMaxIterations);
+        (void)j.at("cornerRefinementMinAccuracy").get_to(p.cornerRefinementMinAccuracy);
+        (void)j.at("markerBorderBits").get_to(p.markerBorderBits);
+        (void)j.at("perspectiveRemovePixelPerCell").get_to(p.perspectiveRemovePixelPerCell);
+        (void)j.at("perspectiveRemoveIgnoredMarginPerCell").get_to(p.perspectiveRemoveIgnoredMarginPerCell);
+        (void)j.at("maxErroneousBitsInBorderRate").get_to(p.maxErroneousBitsInBorderRate);
+        (void)j.at("minOtsuStdDev").get_to(p.minOtsuStdDev);
+        (void)j.at("errorCorrectionRate").get_to(p.errorCorrectionRate);
+        (void)j.at("aprilTagQuadDecimate").get_to(p.aprilTagQuadDecimate);
+        (void)j.at("aprilTagQuadSigma").get_to(p.aprilTagQuadSigma);
+        (void)j.at("aprilTagMinClusterPixels").get_to(p.aprilTagMinClusterPixels);
+        (void)j.at("aprilTagMaxNmaxima").get_to(p.aprilTagMaxNmaxima);
+        (void)j.at("aprilTagCriticalRad").get_to(p.aprilTagCriticalRad);
+        (void)j.at("aprilTagMaxLineFitMse").get_to(p.aprilTagMaxLineFitMse);
+        (void)j.at("aprilTagMinWhiteBlackDiff").get_to(p.aprilTagMinWhiteBlackDiff);
+        (void)j.at("aprilTagDeglitch").get_to(p.aprilTagDeglitch);
+        (void)j.at("detectInvertedMarker").get_to(p.detectInvertedMarker);
+        (void)j.at("useAruco3Detection").get_to(p.useAruco3Detection);
+        (void)j.at("minSideLengthCanonicalImg").get_to(p.minSideLengthCanonicalImg);
+        (void)j.at("minMarkerLengthRatioOriginalImg").get_to(p.minMarkerLengthRatioOriginalImg);
     }
 }
 
 namespace YACCP::Config {
     struct DetectionConfig {
-        int openCvDictionaryId{};
-        int detectionInterval{};
+        int openCvArucoDictionaryId{};
         float cornerMin{};
 
         cv::aruco::CharucoParameters charucoParameters{};
@@ -108,8 +107,7 @@ namespace YACCP::Config {
 
     inline void to_json(nlohmann::json& j, const DetectionConfig& d) {
         j = {
-            {"openCvDictionaryId", d.openCvDictionaryId},
-            // DetectionInterval is a user variable and not needed to recreate an experiment.
+            {"openCvDictionaryId", d.openCvArucoDictionaryId},
             {"cornerMin", d.cornerMin},
             {"charucoParameters", d.charucoParameters},
             {"detectorParameters", d.detectorParameters},
@@ -118,10 +116,10 @@ namespace YACCP::Config {
 
 
     inline void from_json(const nlohmann::json& j, DetectionConfig& d) {
-        j.at("openCvDictionaryId").get_to(d.openCvDictionaryId);
-        j.at("cornerMin").get_to(d.cornerMin);
-        j.at("charucoParameters").get_to(d.charucoParameters);
-        j.at("detectorParameters").get_to(d.detectorParameters);
+        (void)j.at("openCvDictionaryId").get_to(d.openCvArucoDictionaryId);
+        (void)j.at("cornerMin").get_to(d.cornerMin);
+        (void)j.at("charucoParameters").get_to(d.charucoParameters);
+        (void)j.at("detectorParameters").get_to(d.detectorParameters);
     }
 
 

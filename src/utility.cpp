@@ -124,6 +124,14 @@ namespace YACCP::Utility {
     }
 
 
+    Config::FileConfig parseJsonToFileConfig(nlohmann::json& j) {
+        Config::FileConfig fileConfig;
+        (void)j.at("config").get_to(fileConfig);
+
+        return fileConfig;
+    }
+
+
     void saveJobDataToFile(const std::filesystem::path& jobPath,
                            Config::FileConfig& fileConfig,
                            const std::vector<CamData>* camDatas,

@@ -53,28 +53,21 @@ int main(int argc, char** argv) {
             catch (const std::exception& err) {
                 std::cerr << err.what() << "\n";
             }
-        }
-
-        if (*cliCmds.recordingCmd) {
+        } else if (*cliCmds.recordingCmd) {
             try {
                 exitCode = YACCP::Executor::runRecording(cliCmdConfig, path, dateTime);
             }
             catch (const std::exception& err) {
                 std::cerr << err.what() << "\n";
             }
-        }
-
-        if (*cliCmds.validationCmd) {
+        } else if (*cliCmds.validationCmd) {
             try {
                 YACCP::Executor::runValidation(cliCmdConfig, path, dateTime);
             }
             catch (const std::exception& err) {
                 std::cerr << err.what() << "\n";
             }
-        }
-
-        cliCmdConfig.calibrationCmdConfig.jobId = "job_2026-01-21_17-08-42";
-        if (*cliCmds.calibrationCmds.calibration || true) {
+        } else if (*cliCmds.calibrationCmds.calibration) {
             try {
                 YACCP::Executor::runCalibration(cliCmdConfig, cliCmds, path, dateTime);
             }
@@ -82,6 +75,8 @@ int main(int argc, char** argv) {
                 err) {
                 std::cerr << err.what() << "\n";
             }
+        } else {
+            std::cerr << "No valid sub command given\n";
         }
     }
 

@@ -1,12 +1,14 @@
 #ifndef YACCP_SRC_CONFIG_RECORDING_HPP
 #define YACCP_SRC_CONFIG_RECORDING_HPP
 #include <variant>
+#include <metavision/hal/facilities/i_event_trail_filter_module.h>
 
 #include <nlohmann/json.hpp>
 
 #include <toml++/toml.hpp>
 
 namespace YACCP::Config {
+
     /**
     * @brief Simple enum to represent different camera worker types.
     */
@@ -15,9 +17,20 @@ namespace YACCP::Config {
         basler,
     };
 
+    Metavision::I_EventTrailFilterModule::Type stringToEftMode(std::string mode);
+
+    std::string etfModeToString(Metavision::I_EventTrailFilterModule::Type eftMode);
+
+
     inline std::unordered_map<std::string, WorkerTypes> workerTypesMap{
         {"prophesee", WorkerTypes::prophesee},
         {"basler", WorkerTypes::basler}
+    };
+
+    inline std::unordered_map<std::string, Metavision::I_EventTrailFilterModule::Type> eftModesMap{
+        {"stc_cut_trail", Metavision::I_EventTrailFilterModule::Type::STC_CUT_TRAIL},
+        {"stc_keep_trail", Metavision::I_EventTrailFilterModule::Type::STC_KEEP_TRAIL},
+        {"trail", Metavision::I_EventTrailFilterModule::Type::TRAIL}
     };
 
     struct Basler {
@@ -27,6 +40,23 @@ namespace YACCP::Config {
         int accumulationTime{};
         bool saveEventFile{};
         int fallingEdgePolarity{};
+
+        // https://docs.prophesee.ai/stable/hw/manuals/biases.html
+        std::optional<int> biasDiff{};
+        std::optional<int> biasDiffOn{};
+        std::optional<int> biasDiffOff{};
+        std::optional<int> biasFo{};
+        std::optional<int> biasHpf{};
+        std::optional<int> biasRefr{};
+
+        // https://docs.prophesee.ai/stable/hw/manuals/esp.html#event-rate-controller-erc
+        bool ercEnabled{};
+        std::optional<int> ercRate{};
+
+        // https://docs.prophesee.ai/stable/hw/manuals/esp.html#event-trail-filter-stc-trail
+        bool etfEnabled{};
+        std::optional<Metavision::I_EventTrailFilterModule::Type> etfMode{};
+        std::optional<int> etfThreshold{};
     };
 
     using ConfigBackend = std::variant<Basler, Prophesee>;
@@ -40,6 +70,7 @@ namespace YACCP::Config {
         };
 
         int fps{};
+        int detectionInterval{};
         int masterWorker{};
         std::vector<Worker> workers{};
     };
@@ -49,15 +80,51 @@ namespace YACCP::Config {
         j = {
             {"accumulationTime", p.accumulationTime},
             {"fallingEdgePolarity", p.fallingEdgePolarity},
-            {"saveEventFile", p.saveEventFile}
+            {"saveEventFile", p.saveEventFile},
+
+            {"biasDiff", p.biasDiff},
+            {"biasDiffOn", p.biasDiffOn},
+            {"biasDiffOff", p.biasDiffOff},
+            {"biasFo", p.biasFo},
+            {"biasHpf", p.biasHpf},
+            {"biasRefr", p.biasRefr},
         };
+
+        j["ercEnabled"] = p.ercEnabled;
+        if (p.ercEnabled) {
+            j["ercRate"] = p.ercRate;
+        }
+
+        j["etfEnabled"] = p.etfEnabled;
+        if (p.etfEnabled) {
+            j["etfMode"] = etfModeToString(*p.etfMode);
+            j["etfThreshold"] = p.etfThreshold;
+        }
     }
 
 
     inline void from_json(const nlohmann::json& j, Prophesee& p) {
-        j.at("accumulationTime").get_to(p.accumulationTime);
-        j.at("fallingEdgePolarity").get_to(p.fallingEdgePolarity);
-        j.at("saveEventFile").get_to(p.saveEventFile);
+        (void)j.at("accumulationTime").get_to(p.accumulationTime);
+        (void)j.at("fallingEdgePolarity").get_to(p.fallingEdgePolarity);
+        (void)j.at("saveEventFile").get_to(p.saveEventFile);
+
+        (void)j.at("biasDiff").get_to(p.biasDiff);
+        (void)j.at("biasDiffOn").get_to(p.biasDiffOn);
+        (void)j.at("biasDiffOff").get_to(p.biasDiffOff);
+        (void)j.at("biasFo").get_to(p.biasFo);
+        (void)j.at("biasHpf").get_to(p.biasHpf);
+        (void)j.at("biasRefr").get_to(p.biasRefr);
+
+        (void)j.at("ercEnabled").get_to(p.ercEnabled);
+        if (p.ercEnabled) {
+            (void)j.at("ercRate").get_to(p.ercRate);
+        }
+
+        (void)j.at("etfEnabled").get_to(p.etfEnabled);
+        if (p.etfEnabled) {
+            p.etfMode = stringToEftMode(j.at("etfMode").get<std::string>());
+            (void)j.at("etfThreshold").get_to(p.etfThreshold);
+        }
     }
 
 
@@ -84,10 +151,9 @@ namespace YACCP::Config {
 
 
     inline void from_json(const nlohmann::json& j, RecordingConfig::Worker& w) {
-        j.at("placement").get_to(w.placement);
-        j.at("camUuid").get_to(w.camUuid);
+        (void)j.at("placement").get_to(w.placement);
+        (void)j.at("camUuid").get_to(w.camUuid);
 
-        // Discriminator
         const std::string type = j.at("type");
 
         // Backend
@@ -104,6 +170,7 @@ namespace YACCP::Config {
     inline void to_json(nlohmann::json& j, const RecordingConfig& r) {
         j = {
             {"fps", r.fps},
+            // DetectionInterval is a user variable and not needed to recreate an experiment.
             {"masterWorker", r.masterWorker},
             {"workers", r.workers},
         };
@@ -111,8 +178,9 @@ namespace YACCP::Config {
 
 
     inline void from_json(const nlohmann::json& j, RecordingConfig& r) {
-        j.at("fps").get_to(r.fps);
-        j.at("masterWorker").get_to(r.masterWorker);
+        (void)j.at("fps").get_to(r.fps);
+        // DetectionInterval is a user variable and not needed to recreate an experiment.
+        (void)j.at("masterWorker").get_to(r.masterWorker);
         r.workers = j.at("workers").get<std::vector<RecordingConfig::Worker> >();
     }
 

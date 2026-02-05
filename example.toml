@@ -35,7 +35,7 @@ marker_length =
 #DICT_6X6_50=8, DICT_6X6_100=9, DICT_6X6_250=10, DICT_6X6_1000=11,
 #DICT_7X7_50=12, DICT_7X7_100=13, DICT_7X7_250=14, DICT_7X7_1000=15,
 #DICT_ARUCO_ORIGINAL = 16
-#charuco_dictionary = 8
+#opencv_aruco_dictionary = 8
 #detection_interval = 2
 #minimum_corner_fraction = 0.125
 
@@ -82,22 +82,37 @@ marker_length =
 #minMarkerLengthRatioOriginalImg = 0.0
 
 [recording]
-master_worker = 1
+master_worker =
+#fps = 30
+#detection_interval = 2
 
 # Possible workers are: prophesee, basler
 [[recording.workers]]
 type = "basler"
-placement = 1
-#cam_uuid = "789" # Optional
+placement =
+#cam_uuid =
 
 [[recording.workers]]
 type = "prophesee"
-accumulation_time = 33333
-placement = 0
-save_event_file = true # Optional
-falling_edge_polarity = 1
-cam_uuid = "9123" # Optional
+placement =
+#cam_uuid =
+#accumulation_time = 33333
+#save_event_file = true
+falling_edge_polarity =
+#bias_diff =
+#bias_diff_on =
+#bias_diff_off =
+#bias_fo =
+#bias_hpf =
+#bias_refr =
+
+#enable_erc =
+#erc_rate =
+
+#enable_etf =
+#etf_mode =
+#etf_threshold =
 
 [viewing]
-views_horizontal = 3
+#views_horizontal = 3
 

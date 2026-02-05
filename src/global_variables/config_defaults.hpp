@@ -12,12 +12,14 @@ namespace YACCP::GlobalVariables {
 
     // Default [detection] variables
     inline constexpr auto charucoDictionary{8};
-    inline constexpr auto detectionInterval{2}; // seconds
     inline constexpr auto minCornerFraction{.125F};
 
     // Default [recording] variables
     inline constexpr auto recordingFps{30};
+    inline constexpr auto detectionInterval{2}; // seconds
     inline constexpr auto accumulationTime{33333};
+    inline constexpr auto ercEnabled{false};
+    inline constexpr auto etfEnabled{false};
 
     // Default [view] variables
     inline constexpr auto camViewsHorizontal{3};

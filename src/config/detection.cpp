@@ -8,8 +8,7 @@ namespace YACCP::Config {
         const auto* detectionTbl{tbl["detection"].as_table()};
         if (!detectionTbl) return;
 
-        config.openCvDictionaryId = (*detectionTbl)["charuco_dictionary"].value_or(GlobalVariables::charucoDictionary);
-        config.detectionInterval = (*detectionTbl)["detection_interval"].value_or(GlobalVariables::detectionInterval);
+        config.openCvArucoDictionaryId = (*detectionTbl)["opencv_aruco_dictionary"].value_or(GlobalVariables::charucoDictionary);
         config.cornerMin = (*detectionTbl)["minimum_corner_fraction"].value_or(GlobalVariables::minCornerFraction);
 
         // Load custom charuco parameters if set, otherwise load defaults.

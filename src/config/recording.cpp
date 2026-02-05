@@ -5,12 +5,13 @@
 #include "../global_variables/config_defaults.hpp"
 
 #include <boost/algorithm/string.hpp>
+#include <metavision/hal/facilities/i_event_trail_filter_module.h>
 
 
 namespace YACCP::Config {
     WorkerTypes stringToWorkerType(std::string worker) {
         boost::algorithm::to_lower(worker); // make string lowercase
-        if (const auto it = workerTypesMap.find(worker); it != workerTypesMap.end()) {
+        if (const auto it{workerTypesMap.find(worker)}; it != workerTypesMap.end()) {
             return it->second;
         }
         throw std::runtime_error("Unknown worker type: " + worker);
@@ -19,7 +20,28 @@ namespace YACCP::Config {
 
     std::string workerTypeToString(const WorkerTypes workerType) {
         for (const auto& [key, value] : workerTypesMap) {
-            if (value == workerType) return key;
+            if (value == workerType) {
+                return key;
+            }
+        }
+        return "Not found";
+    }
+
+
+    Metavision::I_EventTrailFilterModule::Type stringToEftMode(std::string mode) {
+        boost::algorithm::to_lower(mode);
+        if (const auto it{eftModesMap.find(mode)}; it != eftModesMap.end()) {
+            return it->second;
+        }
+        throw std::runtime_error("Unknown event trail filter mode");
+    }
+
+
+    std::string etfModeToString(const Metavision::I_EventTrailFilterModule::Type eftMode) {
+        for (const auto& [key, value] : eftModesMap) {
+            if (value == eftMode) {
+                return key;
+            }
         }
         return "Not found";
     }
@@ -43,6 +65,7 @@ namespace YACCP::Config {
 
         // Global [recording] variables.
         config.fps = (*recordingTbl)["fps"].value_or(GlobalVariables::recordingFps);
+        config.detectionInterval = (*recordingTbl)["detection_interval"].value_or(GlobalVariables::detectionInterval);
         config.masterWorker = requireVariable<int>(*recordingTbl, "master_worker", "recording");
 
         // Check whether the defined masterWorker variables is a natural number N
@@ -74,9 +97,9 @@ namespace YACCP::Config {
             };
             worker.placement = requireVariable<int>(*workerTbl, "placement", "[recording.workers]");
 
-            if (worker.placement + 1 > workerArray->size() || worker.placement < 0)
-                throw std::runtime_error("Invalid 'placement' index"
-                );
+            if (worker.placement + 1 > workerArray->size() || worker.placement < 0) {
+                throw std::runtime_error("Invalid 'placement' index");
+            }
             if (typeCounts[type] > 1) {
                 worker.camUuid = requireVariable<std::string>(*workerTbl, "cam_uuid", "[recording.workers]");
             } else {
@@ -97,6 +120,48 @@ namespace YACCP::Config {
                 prophesee.fallingEdgePolarity = requireVariable<int>(*workerTbl,
                                                                      "falling_edge_polarity",
                                                                      "[recording.workers]");
+
+                // Biases
+                prophesee.biasDiff = workerTbl->contains("bias_diff")
+                                         ? std::optional{(*workerTbl)["bias_diff"].value<int>()}
+                                         : std::nullopt;
+                prophesee.biasDiffOn = workerTbl->contains("bias_diff_on")
+                                           ? std::optional{(*workerTbl)["bias_diff_on"].value<int>()}
+                                           : std::nullopt;
+                prophesee.biasDiffOff = workerTbl->contains("bias_diff_off")
+                                            ? std::optional{(*workerTbl)["bias_diff_off"].value<int>()}
+                                            : std::nullopt;
+                prophesee.biasFo = workerTbl->contains("bias_fo")
+                                       ? std::optional{(*workerTbl)["bias_fo"].value<int>()}
+                                       : std::nullopt;
+                prophesee.biasHpf = workerTbl->contains("bias_hpf")
+                                        ? std::optional{(*workerTbl)["bias_hpf"].value<int>()}
+                                        : std::nullopt;
+                prophesee.biasRefr = workerTbl->contains("bias_refr")
+                                         ? std::optional{(*workerTbl)["bias_refr"].value<int>()}
+                                         : std::nullopt;
+
+                // Event rate controller
+                prophesee.ercEnabled = (*workerTbl)["enable_erc"].value_or(GlobalVariables::ercEnabled);
+                if (prophesee.ercEnabled) {
+                    prophesee.ercRate = workerTbl->contains("erc_rate")
+                                            ? std::optional{(*workerTbl)["erc_rate"].value<int>()}
+                                            : std::nullopt;
+                }
+
+                // Event trail filter
+                prophesee.etfEnabled = (*workerTbl)["enable_etf"].value_or(GlobalVariables::etfEnabled);
+                if (prophesee.etfEnabled) {
+                    prophesee.etfMode = workerTbl->contains("etf_mode")
+                                            ? std::optional{
+                                                stringToEftMode((*workerTbl)["etf_mode"].value<std::string>().value())}
+                                            : std::nullopt;
+                    prophesee.etfThreshold = workerTbl->contains("etf_threshold")
+                                                 ? std::optional{(*workerTbl)["etf_threshold"].value<int>()}
+                                                 : std::nullopt;
+
+                }
+
                 worker.configBackend = prophesee;
                 break;
             }

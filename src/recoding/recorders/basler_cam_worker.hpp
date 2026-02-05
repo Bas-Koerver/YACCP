@@ -28,7 +28,6 @@ namespace YACCP {
     private:
         const Config::Basler& configBackend_;
         int requestedFrame_{1};    // Start from frame 1
-        int detectionInterval_{2}; // seconds
 
         void setPixelFormat(GenApi::INodeMap& nodeMap);
 

@@ -2,13 +2,14 @@
 
 #include "../job_data.hpp"
 
+#include <metavision/hal/facilities/i_erc_module.h>
+#include <metavision/hal/facilities/i_event_trail_filter_module.h>
 #include <metavision/hal/facilities/i_hw_identification.h>
 #include <metavision/hal/facilities/i_ll_biases.h>
 #include <metavision/hal/facilities/i_trigger_in.h>
 #include <metavision/sdk/core/algorithms/on_demand_frame_generation_algorithm.h>
 #include <metavision/sdk/core/algorithms/polarity_filter_algorithm.h>
 #include <metavision/sdk/core/utils/cd_frame_generator.h>
-#include <metavision/sdk/stream/camera.h>
 
 namespace YACCP {
     std::string sourceTypeToString(Metavision::OnlineSourceType type) {
@@ -25,22 +26,139 @@ namespace YACCP {
     }
 
 
-    void configureBiases(Metavision::Device& device) {
-        auto* biases = device.get_facility<::Metavision::I_LL_Biases>();
-        (void)biases->set("bias_diff_off", 56);
-        (void)biases->set("bias_diff_on", 56);
+    void PropheseeCamWorker::configureBiases(Metavision::Device& device) const {
+        const auto biases{device.get_facility<::Metavision::I_LL_Biases>()};
+        // bias_diff
+        if (configBackend_.biasDiff) {
+            if (!biases->set("bias_diff", *configBackend_.biasDiff)) {
+                throw std::runtime_error("Failed to set bias_diff, "
+                    "the camera: " + camData_.info.camName +
+                    ". With index: " + std::to_string(camData_.info.camIndexId) +
+                    ". Probably doesn't support this.");
+            }
+        } else {
+            configBackend_.biasDiff = biases->get("bias_diff");
+        }
+
+        // bias_diff_on
+        if (configBackend_.biasDiffOn) {
+            if (!biases->set("bias_diff_on", *configBackend_.biasDiffOn)) {
+                throw std::runtime_error("Failed to set bias_diff_on, "
+                    "the camera: " + camData_.info.camName +
+                    ". With index: " + std::to_string(camData_.info.camIndexId) +
+                    ". Probably doesn't support this.");
+            }
+        } else {
+            configBackend_.biasDiffOn = biases->get("bias_diff_on");
+        }
+
+        // bias_diff_off
+        if (configBackend_.biasDiffOff) {
+            if (!biases->set("bias_diff_off", *configBackend_.biasDiffOff)) {
+                throw std::runtime_error("Failed to set bias_diff_off, "
+                    "the camera: " + camData_.info.camName +
+                    ". With index: " + std::to_string(camData_.info.camIndexId) +
+                    ". Probably doesn't support this.");
+            }
+        } else {
+            configBackend_.biasDiffOff = biases->get("bias_diff_off");
+        }
+
+        // bias_fo
+        if (configBackend_.biasFo) {
+            if (!biases->set("bias_fo", *configBackend_.biasFo)) {
+                throw std::runtime_error("Failed to set bias_fo, "
+                    "the camera: " + camData_.info.camName +
+                    ". With index: " + std::to_string(camData_.info.camIndexId) +
+                    ". Probably doesn't support this.");
+            }
+        } else {
+            configBackend_.biasFo = biases->get("bias_fo");
+        }
+
+        // bias_hpf
+        if (configBackend_.biasHpf) {
+            if (!biases->set("bias_hpf", *configBackend_.biasHpf)) {
+                throw std::runtime_error("Failed to set bias_hpf, "
+                    "the camera: " + camData_.info.camName +
+                    ". With index: " + std::to_string(camData_.info.camIndexId) +
+                    ". Probably doesn't support this.");
+            }
+        } else {
+            configBackend_.biasHpf = biases->get("bias_hpf");
+        }
+
+        // bias_refr
+        if (configBackend_.biasRefr) {
+            if (!biases->set("bias_refr", *configBackend_.biasRefr)) {
+                throw std::runtime_error("Failed to set bias_refr, "
+                    "for the camera: " + camData_.info.camName +
+                    ". With index: " + std::to_string(camData_.info.camIndexId) +
+                    ". Probably doesn't support this.");
+            }
+        } else {
+            configBackend_.biasRefr = biases->get("bias_refr");
+        }
     }
 
 
-    void configureTimingInterfaces(Metavision::Device& device) {
-        auto i_trigger_in = device.get_facility<Metavision::I_TriggerIn>();
+    void PropheseeCamWorker::configureEventRateControl(Metavision::Device& device) const {
+        const auto erc{device.get_facility<Metavision::I_ErcModule>()};
+        if (configBackend_.ercEnabled) {
+            if (!erc->enable(true)) {
+                throw std::runtime_error(
+                    "Failed to set event rate controller, "
+                    "the camera: " + camData_.info.camName +
+                    ". With index: " + std::to_string(camData_.info.camIndexId) +
+                    ". Probably doesn't support this.");
+            }
+            if (configBackend_.ercRate) {
+                (void)erc->set_cd_event_rate(static_cast<uint32_t>(*configBackend_.ercRate));
+            } else {
+                configBackend_.ercRate = erc->get_cd_event_rate();
+            }
+        }
+    }
+
+
+    void PropheseeCamWorker::configureEventTrailFilter(Metavision::Device& device) const {
+        const auto etf{device.get_facility<Metavision::I_EventTrailFilterModule>()};
+        if (configBackend_.etfEnabled) {
+            if (!etf->enable(true)) {
+                throw std::runtime_error("Failed to set event trail filter, "
+                    "the camera: " + camData_.info.camName +
+                    ". With index: " + std::to_string(camData_.info.camIndexId) +
+                    ". Probably doesn't support this.");
+            }
+
+            if (configBackend_.etfMode) {
+                (void)etf->set_type(*configBackend_.etfMode);
+            } else {
+                configBackend_.etfMode = etf->get_type();
+            }
+
+            if (configBackend_.etfThreshold) {
+                (void)etf->set_threshold(static_cast<uint32_t>(*configBackend_.etfThreshold));
+            } else {
+                configBackend_.etfThreshold = etf->get_threshold();
+            }
+        }
+    }
+
+
+    void PropheseeCamWorker::configureTimingInterfaces(Metavision::Device& device) {
+        const auto i_trigger_in{device.get_facility<Metavision::I_TriggerIn>()};
         (void)i_trigger_in->enable(Metavision::I_TriggerIn::Channel::Main);
     }
 
 
-    void configureFacilities(Metavision::Camera& camera) {
+    void PropheseeCamWorker::configureFacilities(Metavision::Camera& camera) {
         Metavision::Device& device = camera.get_device();
+
         configureBiases(device);
+        configureEventRateControl(device);
+        configureEventTrailFilter(device);
+
         // TODO: Handle scenarios where the camera doesn't support external triggers
         configureTimingInterfaces(device);
     }
@@ -66,11 +184,11 @@ namespace YACCP {
     PropheseeCamWorker::PropheseeCamWorker(std::stop_source stopSource,
                                            std::vector<CamData>& camDatas,
                                            Config::RecordingConfig& recordingConfig,
-                                           const Config::Prophesee& configBackend,
+                                           Config::Prophesee& configBackend,
                                            int index,
-                                           const std::filesystem::path& jobPath)
-        : CameraWorker(stopSource, camDatas, recordingConfig, index, jobPath),
-          configBackend_(configBackend) {
+                                           const std::filesystem::path& jobPath) :
+        CameraWorker(stopSource, camDatas, recordingConfig, index, jobPath),
+        configBackend_(configBackend) {
     }
 
 
@@ -110,10 +228,9 @@ namespace YACCP {
                 cam = Metavision::Camera::from_first_available();
                 camData_.runtimeData.isOpen.store(true);
             }
-            catch (Metavision::CameraException& e) {
-                std::cerr << e.what() << "\n";
-                camData_.runtimeData.exitCode = 2;
-                stopSource_.request_stop();
+            catch (...) {
+                camData_.runtimeData.e = std::current_exception();
+                (void)stopSource_.request_stop();
                 return;
             }
         } else {
@@ -122,10 +239,9 @@ namespace YACCP {
                 cam = Metavision::Camera::from_serial(recordingConfig_.workers[index_].camUuid);
                 camData_.runtimeData.isOpen.store(true);
             }
-            catch (Metavision::CameraException& e) {
-                std::cerr << e.what() << "\n";
-                camData_.runtimeData.exitCode = 2;
-                stopSource_.request_stop();
+            catch (...) {
+                camData_.runtimeData.e = std::current_exception();
+                (void)stopSource_.request_stop();
                 return;
             }
         }
@@ -135,7 +251,6 @@ namespace YACCP {
         if (camData_.runtimeData.isOpen.load()) {
             // TODO: add runtime error handling
             cv::Mat cdFrame;
-            cv::Mat grayFrame;
             std::mutex cd_frame_mutex;
             Metavision::timestamp cd_frame_ts{0};
             // Set polarity filter to only include events with a positive polarity.
@@ -143,10 +258,19 @@ namespace YACCP {
             const auto& geometry = cam.geometry();
             camData_.info.resolution.width = geometry.get_width();
             camData_.info.resolution.height = geometry.get_height();
-            bool requestNew{true};
+            auto requestNew{true};
+            auto requestedFrame{0};
+            auto masterCamFrameIndex{0};
 
             // Configure facilities like biases en timing interfaces.
-            configureFacilities(cam);
+            try {
+                configureFacilities(cam);
+            }
+            catch (...) {
+                camData_.runtimeData.e = std::current_exception();
+                (void)stopSource_.request_stop();
+                return;
+            }
 
             Metavision::CDFrameGenerator cdFrameGenerator{geometry.get_width(), geometry.get_height()};
             cdFrameGenerator.set_display_accumulation_time_us(configBackend_.accumulationTime);
@@ -158,7 +282,7 @@ namespace YACCP {
             };
 
             (void)cdFrameGenerator.start(
-                recordingConfig_.fps,
+                static_cast<std::uint16_t>(recordingConfig_.fps),
                 [&cd_frame_mutex, &cdFrame, &cd_frame_ts](const Metavision::timestamp& ts, const cv::Mat& frame) {
                     std::unique_lock<std::mutex> lock(cd_frame_mutex);
                     cd_frame_ts = ts;
@@ -166,28 +290,31 @@ namespace YACCP {
                 });
 
             (void)cam.ext_trigger().add_callback(
-                [this, &onDemandFrameGenerator, &requestNew](const Metavision::EventExtTrigger* begin,
-                                                             const Metavision::EventExtTrigger* end) {
-                    if (requestedFrame_ < 0) {
-                        (void)camData_.runtimeData.frameRequestQ.try_dequeue(requestedFrame_);
+                [this, &onDemandFrameGenerator, &requestNew, &requestedFrame, &masterCamFrameIndex](
+                const Metavision::EventExtTrigger* begin,
+                const Metavision::EventExtTrigger* end) {
+                    if (requestNew) {
+                        (void)camData_.runtimeData.frameRequestQ.try_dequeue(requestedFrame);
+                        requestNew = false;
                     }
 
                     for (auto ev = begin; ev != end; ++ev) {
                         // Check for falling edge trigger and increment frame index.
                         if (ev->p == configBackend_.fallingEdgePolarity) {
                             // Handle falling edge trigger event
-                            ++frameIndex_;
+                            ++masterCamFrameIndex;
                         }
+                        // TODO: Add warning when camera is not keeping up.
 
                         // If a frame was requested and the current frame index matches or
                         // is larger than the requested frame, generate and enqueue it.
-                        if (frameIndex_ >= requestedFrame_ && requestedFrame_ >= 0) {
+                        if (masterCamFrameIndex >= requestedFrame && requestedFrame > 0) {
                             VerifyTask task;
-                            task.id = requestedFrame_;
+                            task.id = requestedFrame;
                             onDemandFrameGenerator.generate(ev->t, task.frame);
-                            camData_.runtimeData.frameVerifyQ.enqueue(task);
+                            (void)camData_.runtimeData.frameVerifyQ.enqueue(task);
 
-                            requestedFrame_ = -1;
+                            requestNew = true;
                         }
                     }
                 });
@@ -216,6 +343,7 @@ namespace YACCP {
                 {
                     std::unique_lock<std::mutex> lock(cd_frame_mutex);
                     if (cdFrame.empty()) {
+                        std::this_thread::sleep_for(std::chrono::microseconds(100));
                         continue;
                     }
                     localFrame = cdFrame.clone();

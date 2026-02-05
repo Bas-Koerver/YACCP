@@ -37,7 +37,8 @@ namespace YACCP::Executor {
 
                 // Load config from JSON file
                 nlohmann::json j = Utility::loadJobDataFromFile(jobPath);
-                (void)j.at("config").get_to(fileConfig);
+                (void)j.at("config").at("boardConfig").get_to(fileConfig.boardConfig);
+                (void)j.at("config").at("detectionConfig").get_to(fileConfig.detectionConfig);
             }
 
             CreateBoard::charuco(fileConfig, cliCmdConfig.boardCreationCmdConfig, jobPath);

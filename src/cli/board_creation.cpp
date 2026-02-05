@@ -6,31 +6,7 @@ namespace YACCP::CLI {
 
         subCmd->add_flag("-l, --list", config.showAvailableJobs, "List jobs missing a board image and/or video");
 
-        subCmd->add_option("-j, --job-id", config.jobId, "Give a specific job ID to create a board for.")
-              ->default_str("Creates a new job");
-
-        // subCmd->add_option("-s, --square-length", config.squareLength, "The square length in pixels")
-        //       ->default_val(config.squareLength)
-        //       ->check(::CLI::PositiveNumber);
-        //
-        // subCmd
-        //     ->add_option("-m, --marker-length", config.markerLength, "The ArUco marker length in pixels")
-        //     ->default_val(config.markerLength)
-        //     ->check(::CLI::PositiveNumber);
-        //
-        // subCmd
-        //     ->add_option("-e, --marker-border",
-        //                  config.marginSize,
-        //                  "The border size (margins) of the ArUco marker in pixels")
-        //     ->default_str("square-length - marker-length")
-        //     ->check(::CLI::PositiveNumber);
-        //
-        // subCmd
-        //     ->add_option("-b, --border-point",
-        //                  config.borderBits,
-        //                  "The amount of points (pixels) for the border")
-        //     ->default_val(config.borderBits)
-        //     ->check(::CLI::PositiveNumber);
+        subCmd->add_option("-j, --job-id", config.jobId, "Give a specific job ID to create a board for.");
 
         subCmd
             ->add_flag("!-i, !--image",
@@ -43,12 +19,6 @@ namespace YACCP::CLI {
                        config.generateVideo,
                        "Whether to generate an event video of the generated board")
             ->default_str("false");
-
-        // subCmd->parse_complete_callback([&config] {
-        //     if (!config.marginSize) {
-        //         config.marginSize = config.squareLength - config.markerLength;
-        //     }
-        // });
 
         return subCmd;
     }

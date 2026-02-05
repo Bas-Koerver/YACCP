@@ -68,7 +68,7 @@ namespace YACCP::CreateBoard {
                  const CLI::BoardCreationCmdConfig& boardCreationConfig,
                  const std::filesystem::path& jobPath) {
         const cv::aruco::Dictionary dictionary{
-            cv::aruco::getPredefinedDictionary(fileConfig.detectionConfig.openCvDictionaryId)
+            cv::aruco::getPredefinedDictionary(fileConfig.detectionConfig.openCvArucoDictionaryId)
         };
         const cv::aruco::CharucoBoard board{
             fileConfig.boardConfig.boardSize,

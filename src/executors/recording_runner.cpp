@@ -11,6 +11,19 @@
 
 #include <GLFW/glfw3.h>
 
+namespace {
+    void rethrowIfAny(std::vector<YACCP::CamData>& camDatas, std::vector<std::jthread>& threads) {
+        for (auto& thread : threads) {
+            thread.join();
+        }
+        for (auto& [info, runtimeData] : camDatas) {
+            if (runtimeData.e) {
+                std::rethrow_exception(runtimeData.e);
+            }
+        }
+    }
+}
+
 namespace YACCP::Executor {
     int getWorstStopCode(const std::vector<CamData>& camDatas) {
         auto stopCode{0};
@@ -28,6 +41,8 @@ namespace YACCP::Executor {
                      const std::filesystem::path& path,
                      const std::string& dateTime) {
         const std::filesystem::path dataPath{path / "data"};
+
+        // BUG: Found bug that caused image pairs to become desynced.
 
         if (cliCmdConfig.recordingCmdConfig.showAvailableCams) {
             BaslerCamWorker::listAvailableSources();
@@ -73,18 +88,18 @@ namespace YACCP::Executor {
 
                 // Load config from JSON file
                 nlohmann::json j = Utility::loadJobDataFromFile(jobPath);
-                (void)j.at("config").get_to(jsonConfig);
+                jsonConfig = Utility::parseJsonToFileConfig(j);
 
                 // Load config from TOML file
                 YACCP::Config::loadConfig(fileConfig, path);
 
-                if (std::tie(fileConfig.boardConfig.boardSize, fileConfig.detectionConfig.openCvDictionaryId) !=
-                    std::tie(jsonConfig.boardConfig.boardSize, jsonConfig.detectionConfig.openCvDictionaryId)) {
+                if (std::tie(fileConfig.boardConfig.boardSize, fileConfig.detectionConfig.openCvArucoDictionaryId) !=
+                    std::tie(jsonConfig.boardConfig.boardSize, jsonConfig.detectionConfig.openCvArucoDictionaryId)) {
                     std::cerr << "Warning configured TOML does not coincide with stored JSON\n"
                         "This is a warning just to inform you that JSON config will be used for board setup\n";
                 }
                 fileConfig.boardConfig.boardSize = jsonConfig.boardConfig.boardSize;
-                fileConfig.detectionConfig.openCvDictionaryId = jsonConfig.detectionConfig.openCvDictionaryId;
+                fileConfig.detectionConfig.openCvArucoDictionaryId = jsonConfig.detectionConfig.openCvArucoDictionaryId;
             } else {
                 jobPath = dataPath / cliCmdConfig.recordingCmdConfig.jobId;
                 Config::FileConfig jsonConfig;
@@ -105,18 +120,18 @@ namespace YACCP::Executor {
 
                 // Load config from JSON file
                 nlohmann::json j = Utility::loadJobDataFromFile(jobPath);
-                (void)j.at("config").get_to(jsonConfig);
+                jsonConfig = Utility::parseJsonToFileConfig(j);
 
                 // Load config from TOML file
                 YACCP::Config::loadConfig(fileConfig, path);
 
-                if (std::tie(fileConfig.boardConfig.boardSize, fileConfig.detectionConfig.openCvDictionaryId) !=
-                    std::tie(jsonConfig.boardConfig.boardSize, jsonConfig.detectionConfig.openCvDictionaryId)) {
+                if (std::tie(fileConfig.boardConfig.boardSize, fileConfig.detectionConfig.openCvArucoDictionaryId) !=
+                    std::tie(jsonConfig.boardConfig.boardSize, jsonConfig.detectionConfig.openCvArucoDictionaryId)) {
                     std::cerr << "Warning configured TOML does not coincide with stored JSON\n"
                         "This is a warning just to inform you that JSON config will be used for board setup\n";
                 }
                 fileConfig.boardConfig.boardSize = jsonConfig.boardConfig.boardSize;
-                fileConfig.detectionConfig.openCvDictionaryId = jsonConfig.detectionConfig.openCvDictionaryId;
+                fileConfig.detectionConfig.openCvArucoDictionaryId = jsonConfig.detectionConfig.openCvArucoDictionaryId;
             }
 
             Utility::AlternativeBuffer buffer;
@@ -124,7 +139,7 @@ namespace YACCP::Executor {
 
             // Variable setup based on config.
             cv::aruco::Dictionary dictionary{
-                cv::aruco::getPredefinedDictionary(fileConfig.detectionConfig.openCvDictionaryId)
+                cv::aruco::getPredefinedDictionary(fileConfig.detectionConfig.openCvArucoDictionaryId)
             };
             cv::aruco::CharucoParameters charucoParams;
             cv::aruco::DetectorParameters detParams;
@@ -150,8 +165,8 @@ namespace YACCP::Executor {
                 camDatas[index].info.camIndexId = index;
                 camDatas[index].info.isMaster = index == fileConfig.recordingConfig.masterWorker;
 
-                std::visit([&](const auto& backend) {
-                               using T = std::decay_t<decltype(backend)>;
+                std::visit([&]<typename T0>(T0& backend) {
+                               using T = std::decay_t<T0>;
 
                                if constexpr (std::is_same_v<T, Config::Basler>) {
                                    cameraWorkers[index] =
@@ -184,12 +199,15 @@ namespace YACCP::Executor {
             auto allSlavesRunning{false};
             while (!allSlavesRunning) {
                 if (stopSource.stop_requested()) {
+                    rethrowIfAny(camDatas, threads);
                     return getWorstStopCode(camDatas);
                 }
 
                 allSlavesRunning = true;
                 for (auto i{0}; i < numCams; ++i) {
-                    if (camDatas[i].info.isMaster) continue;
+                    if (camDatas[i].info.isMaster) {
+                        continue;
+                    }
                     if (!camDatas[i].runtimeData.isRunning.load()) {
                         allSlavesRunning = false;
                         break;
@@ -212,11 +230,12 @@ namespace YACCP::Executor {
             while (!camDatas[fileConfig.recordingConfig.masterWorker].runtimeData.isRunning.load()) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 if (stopSource.stop_requested()) {
+                    rethrowIfAny(camDatas, threads);
                     return getWorstStopCode(camDatas);
                 }
             }
 
-            // Start the videoViwer
+            // Start the videoViewer
             VideoViewer videoViewer{
                 stopSource,
                 fileConfig.viewingConfig.viewsHorizontal,
@@ -241,10 +260,8 @@ namespace YACCP::Executor {
             };
             threads.emplace_back(&DetectionValidator::start, &detectionValidator);
 
-            // Join all threads when they've finished executing.
-            for (auto& thread : threads) {
-                thread.join();
-            }
+            rethrowIfAny(camDatas, threads);
+
             buffer.disable();
 
             // Create a JSON object with all information on this job,

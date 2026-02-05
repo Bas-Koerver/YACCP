@@ -18,7 +18,9 @@ namespace YACCP::Config {
 
     std::string boardTypeToString(const BoardTypes boardType) {
         for (const auto& [key, value] : boardTypesMap) {
-            if (value == boardType) return key;
+            if (value == boardType) {
+                return key;
+            }
         }
         throw std::runtime_error("unknown board enum type");
     }
@@ -29,11 +31,11 @@ namespace YACCP::Config {
         const auto* boardTbl{tbl["board"].as_table()};
         if (!boardTbl) throw std::runtime_error("Missing [board] table");
 
-        const BoardTypes type{stringToBoardType(requireVariable<std::string>(*boardTbl, "type", "board"))};
+        config.boardType = stringToBoardType(requireVariable<std::string>(*boardTbl, "type", "board"));
         config.boardSize.width = (*boardTbl)["squares_x"].value_or(GlobalVariables::boardWidth);
         config.boardSize.height = (*boardTbl)["squares_y"].value_or(GlobalVariables::boardHeight);
 
-        switch (type) {
+        switch (config.boardType) {
         case BoardTypes::charuco:
             config.squarePixelLength = (*boardTbl)["square_pixel_length"].value_or(
                 GlobalVariables::squarePixelLength);

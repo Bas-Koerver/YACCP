@@ -1,5 +1,7 @@
 #include "detection_validator.hpp"
 
+#include <algorithm>
+
 #include "job_data.hpp"
 
 #include "../utility.hpp"
@@ -10,14 +12,14 @@ namespace YACCP {
                                            const cv::aruco::CharucoDetector& charucoDetector,
                                            moodycamel::ReaderWriterQueue<ValidatedCornersData>& valCornersQ,
                                            const std::filesystem::path& outputPath,
-                                           float cornerMin)
-        : stopSource_(stopSource),
-          stopToken_(stopSource.get_token()),
-          camDatas_(camDatas),
-          charucoDetector_(charucoDetector),
-          valCornersQ_(valCornersQ),
-          outputPath_(outputPath),
-          cornerMin_(cornerMin) {
+                                           float cornerMin) :
+        stopSource_(stopSource),
+        stopToken_(stopSource.get_token()),
+        camDatas_(camDatas),
+        charucoDetector_(charucoDetector),
+        valCornersQ_(valCornersQ),
+        outputPath_(outputPath),
+        cornerMin_(cornerMin) {
     }
 
 
@@ -35,15 +37,19 @@ namespace YACCP {
             std::vector<int> camTaskCorrect{};
             bool taskIdsCorrect{false};
 
-            // Keep dequeueing until all cameras have the same task id.
+            // Keep dequeuing until all cameras have the same task id.
             do {
                 // Get a new task from every camera, skip cameras that are already correct (have the highest taskID/frame index).
                 for (auto i{0}; i < camDatas_.size(); ++i) {
-                    if (std::find(camTaskCorrect.begin(), camTaskCorrect.end(), i) != camTaskCorrect.end()) continue;
+                    if (std::ranges::find(camTaskCorrect, i) != camTaskCorrect.end()) {
+                        continue;
+                    }
 
                     while (!stopToken_.stop_requested() &&
-                           !camDatas_[i].runtimeData.frameVerifyQ.wait_dequeue_timed(verifyTasks[i],
-                               std::chrono::milliseconds(100)));
+                           !camDatas_[i].runtimeData.frameVerifyQ.wait_dequeue_timed(
+                               verifyTasks[i],
+                               std::chrono::milliseconds(100)
+                               ));
                 }
 
                 if (stopToken_.stop_requested()) {
@@ -53,15 +59,13 @@ namespace YACCP {
                 // Get the largest task ID.
                 int maxElement{};
                 for (auto i{0}; i < camDatas_.size(); ++i) {
-                    if (verifyTasks[i].id > maxElement) {
-                        maxElement = verifyTasks[i].id;
-                    }
+                    maxElement = std::max(verifyTasks[i].id, maxElement);
                 }
 
                 // Check which cameras have the largest task ID.
                 for (auto i{0}; i < camDatas_.size(); ++i) {
                     if (verifyTasks[i].id == maxElement) {
-                        camTaskCorrect.emplace_back(i);
+                        (void)camTaskCorrect.emplace_back(i);
                     }
                 }
                 // If all cameras have the same task id, we are done and can continue with the detection.
