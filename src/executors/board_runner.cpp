@@ -4,6 +4,8 @@
 
 #include "../tools/create_board.hpp"
 
+#include "../config/orchestrator.hpp"
+
 
 namespace YACCP::Executor {
     int runBoardCreation(const CLI::CliCmdConfig& cliCmdConfig,

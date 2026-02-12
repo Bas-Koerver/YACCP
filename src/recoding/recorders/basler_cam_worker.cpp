@@ -3,8 +3,6 @@
 
 #include "../job_data.hpp"
 
-#include <tabulate/table.hpp>
-
 class FrameHandler : public Pylon::CImageEventHandler {
 public:
     FrameHandler(std::mutex& m, cv::Mat& f, int& index, GenApi::INodeMap& np)

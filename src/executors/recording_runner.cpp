@@ -42,14 +42,16 @@ namespace YACCP::Executor {
                      const std::string& dateTime) {
         const std::filesystem::path dataPath{path / "data"};
 
-        // BUG: Found bug that caused image pairs to become desynced.
+        // BUG: Found bug that caused image pairs to become desynced, probably because program slowed down when a lot of information needs processing.
 
         if (cliCmdConfig.recordingCmdConfig.showAvailableCams) {
             BaslerCamWorker::listAvailableSources();
             PropheseeCamWorker::listAvailableSources();
         } else if (cliCmdConfig.recordingCmdConfig.showAvailableJobs) {
+            Utility::checkDataPath(dataPath);
             CameraWorker::listJobs(dataPath);
         } else {
+            Utility::checkDataPath(dataPath);
             std::filesystem::path jobPath;
             Config::FileConfig fileConfig;
             // Get the current video mode of the primary monitor.

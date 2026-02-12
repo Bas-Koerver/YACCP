@@ -94,7 +94,7 @@ namespace YACCP::CreateBoard {
                             fileConfig.boardConfig.borderBits);
 
         if (boardCreationConfig.generateImage) {
-            (void)cv::imwrite((jobPath / "board.png").string(), boardImage);
+            (void)cv::imwrite((jobPath / GlobalVariables::boardImageFileName).string(), boardImage);
         }
 
         if (boardCreationConfig.generateVideo) {

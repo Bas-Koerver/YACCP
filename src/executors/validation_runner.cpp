@@ -11,6 +11,7 @@
 namespace YACCP::Executor {
     void runValidation(CLI::CliCmdConfig& cliCmdConfig, std::filesystem::path path, const std::string& dateTime) {
         const std::filesystem::path dataPath{path / "data"};
+        Utility::checkDataPath(dataPath);
         if (cliCmdConfig.validationCmdConfig.showAvailableJobs) {
             ImageValidator::listJobs(dataPath);
         }

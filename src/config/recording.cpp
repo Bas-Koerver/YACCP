@@ -4,7 +4,7 @@
 
 #include "../global_variables/config_defaults.hpp"
 
-#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 #include <metavision/hal/facilities/i_event_trail_filter_module.h>
 
 

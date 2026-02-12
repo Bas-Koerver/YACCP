@@ -4,7 +4,7 @@
 
 #include "../global_variables/config_defaults.hpp"
 
-#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 
 namespace YACCP::Config {
     BoardTypes stringToBoardType(std::string board) {

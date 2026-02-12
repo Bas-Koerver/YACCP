@@ -28,15 +28,13 @@ int main(int argc, char** argv) {
         exitCode = 1;
     }
 
-    /*
-     * CLI
-     */
+    // @brief CLI
     YACCP::CLI::CliCmdConfig cliCmdConfig;
     YACCP::CLI::CliCmds cliCmds;
     YACCP::CLI::addCli(cliCmdConfig, cliCmds);
     CLI11_PARSE(cliCmds.app, argc, argv);
 
-    /*
+    /**
     * Global variable declaration
     */
     std::string dateTime;

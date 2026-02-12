@@ -1,8 +1,18 @@
 #include "calibration_runner.hpp"
 
 #include "../camera_calibration.hpp"
+
 #include "../utility.hpp"
 
+#include "../config/orchestrator.hpp"
+
+#include <nlohmann/json.hpp>
+
+
+namespace YACCP {
+    struct StereoCalibData;
+    struct CamData;
+}
 
 namespace YACCP::Executor {
     void runCalibration(CLI::CliCmdConfig& cliCmdConfig,
@@ -10,6 +20,7 @@ namespace YACCP::Executor {
                         std::filesystem::path path,
                         const std::string& dateTime) {
         const std::filesystem::path dataPath{path / "data"};
+        Utility::checkDataPath(dataPath);
         std::filesystem::path jobPath = dataPath / cliCmdConfig.calibrationCmdConfig.jobId;
 
         Utility::checkJobPath(dataPath, cliCmdConfig.calibrationCmdConfig.jobId);
