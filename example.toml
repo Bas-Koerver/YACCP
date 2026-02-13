@@ -1,51 +1,52 @@
-## This is an example config file.
-# Required variables are shown as uncommented without any value behind it
-# Optional variables are commented with its default value.
+# Example configuration (TOML)
+# - Required keys are present with an empty value: key =
+# - Optional keys are commented and show their default: #key = <default>
 
-# –––––––-–––––––––---------------------------------- [oard] CONFIG ----------------------------------–––––––––––––––– #
-# Here the details about the board can be described
+# =============================================================================
+# Board
+# =============================================================================
 [board]
-# The board type at the moment this can only be "charuco"
+# Required: currently only "charuco"
 type =
 
-# The amount of squares in the x and y direction defaults are
+# Optional: board layout (number of squares)
 #squares_x = 7
 #squares_y = 5
 
-# These variables are needed for creating a board and are defined in pixel values
-#square_pixel_length = 100
-#marker_pixel_length = 70
+# Optional: board rendering sizes (pixels)
+#square_pixel_length  = 100
+#marker_pixel_length  = 70
+#margin_size          = 30   # default: square_pixel_length - marker_pixel_length
+#border_bits          = 1    # marker border width in bits/pixels
 
-# Margins are the space between the edge of the image and the board itself, default value is
-# the square_pixel_length - marker_pixel_length
-#margin_size = 30
-
-# Defines how many bits/pixels wide the border will be of the charuco markers
-#border_bits = 1
-
-# These values are important from recording and onward, they need to be physically measured on the screen you will be
-# showing your board on
+# Required from the recording step and onward: physical dimensions (measure on the display/print)
 square_length =
 marker_length =
 
+# =============================================================================
+# Detection
+# =============================================================================
 [detection]
-#Dictionary options:
-#DICT_4X4_50=0, DICT_4X4_100=1, DICT_4X4_250=2, DICT_4X4_1000=3,
-#DICT_5X5_50=4, DICT_5X5_100=5, DICT_5X5_250=6, DICT_5X5_1000=7,
-#DICT_6X6_50=8, DICT_6X6_100=9, DICT_6X6_250=10, DICT_6X6_1000=11,
-#DICT_7X7_50=12, DICT_7X7_100=13, DICT_7X7_250=14, DICT_7X7_1000=15,
-#DICT_ARUCO_ORIGINAL = 16
+# Optional: ArUco dictionary (OpenCV enum value)
+# Possible values:
+# 0=DICT_4X4_50, 1=DICT_4X4_100, 2=DICT_4X4_250, 3=DICT_4X4_1000
+# 4=DICT_5X5_50, 5=DICT_5X5_100, 6=DICT_5X5_250, 7=DICT_5X5_1000
+# 8=DICT_6X6_50, 9=DICT_6X6_100, 10=DICT_6X6_250, 11=DICT_6X6_1000
+# 12=DICT_7X7_50, 13=DICT_7X7_100, 14=DICT_7X7_250, 15=DICT_7X7_1000
+# 16=DICT_ARUCO_ORIGINAL
 #opencv_aruco_dictionary = 8
+
+# Optional
 #detection_interval = 2
 #minimum_corner_fraction = 0.125
 
-# Here you can customise the ChArUco detection parameters, an explanation on what each value does is described by OpenCv:
+# OpenCV reference:
 # https://docs.opencv.org/4.13.0/df/d01/structcv_1_1aruco_1_1CharucoParameters.html
 [detection.charuco_parameters]
 #refine = false
 #min_markers = 2
 
-# Here you can customise the aruco detection parameters, an explanation on what each value does is described by OpenCv:
+# OpenCV reference:
 # https://docs.opencv.org/4.13.0/d1/dcd/structcv_1_1aruco_1_1DetectorParameters.html
 [detection.detector_parameters]
 #adaptiveThreshWinSizeMin = 3
@@ -53,7 +54,7 @@ marker_length =
 #adaptiveThreshWinSizeStep = 10
 #adaptiveThreshConstant = 7
 #minMarkerPerimeterRate = 0.03
-#maxMarkerPerimeterRate = 4.
+#maxMarkerPerimeterRate = 4.0
 #polygonalApproxAccuracyRate = 0.03
 #minCornerDistanceRate = 0.05
 #minDistanceToBorder = 3
@@ -81,24 +82,43 @@ marker_length =
 #minSideLengthCanonicalImg = 32
 #minMarkerLengthRatioOriginalImg = 0.0
 
+# =============================================================================
+# Recording
+# =============================================================================
 [recording]
+# Required: placement id of the master camera (same numbering as workers[].placement)
 master_worker =
+
+# Optional: global camera FPS
 #fps = 30
+
+# Optional: in seconds; how often to verify an image for board detection
 #detection_interval = 2
 
-# Possible workers are: prophesee, basler
+# Worker types: "prophesee", "basler"
 [[recording.workers]]
 type = "basler"
+
+# Required: 0..N-1 left-to-right
 placement =
+
+# Optional: required if you have multiple cameras of the same type and want reproducibility
 #cam_uuid =
 
 [[recording.workers]]
 type = "prophesee"
 placement =
+
 #cam_uuid =
 #accumulation_time = 33333
 #save_event_file = true
+
+# Required (if you treat it as required): depends on your pipeline
 falling_edge_polarity =
+
+# Optional: biases
+# Prophesee reference:
+# https://docs.prophesee.ai/stable/hw/manuals/biases.html
 #bias_diff =
 #bias_diff_on =
 #bias_diff_off =
@@ -106,13 +126,21 @@ falling_edge_polarity =
 #bias_hpf =
 #bias_refr =
 
+# Optional: ERC
+# Prophesee reference:
+# https://docs.prophesee.ai/stable/hw/manuals/esp.html#event-signal-processing
 #enable_erc =
 #erc_rate =
 
+# Optional: ETF
+# Prophesee reference:
+# https://docs.prophesee.ai/stable/hw/manuals/esp.html#event-trail-filter-stc-trail
 #enable_etf =
 #etf_mode =
 #etf_threshold =
 
+# =============================================================================
+# Viewing
+# =============================================================================
 [viewing]
 #views_horizontal = 3
-
