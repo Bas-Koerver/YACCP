@@ -5,7 +5,6 @@
 #include "../global_variables/config_defaults.hpp"
 
 #include <boost/algorithm/string/case_conv.hpp>
-#include <metavision/hal/facilities/i_event_trail_filter_module.h>
 
 
 namespace YACCP::Config {
@@ -28,7 +27,7 @@ namespace YACCP::Config {
     }
 
 
-    Metavision::I_EventTrailFilterModule::Type stringToEftMode(std::string mode) {
+    EventTrailFilterType stringToEftMode(std::string mode) {
         boost::algorithm::to_lower(mode);
         if (const auto it{eftModesMap.find(mode)}; it != eftModesMap.end()) {
             return it->second;
@@ -37,7 +36,7 @@ namespace YACCP::Config {
     }
 
 
-    std::string etfModeToString(const Metavision::I_EventTrailFilterModule::Type eftMode) {
+    std::string etfModeToString(const EventTrailFilterType eftMode) {
         for (const auto& [key, value] : eftModesMap) {
             if (value == eftMode) {
                 return key;

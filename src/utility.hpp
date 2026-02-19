@@ -4,6 +4,8 @@
 
 #include "recoding/job_data.hpp"
 
+#include <iostream>
+
 #include <nlohmann/json.hpp>
 
 #include <opencv2/objdetect/charuco_detector.hpp>

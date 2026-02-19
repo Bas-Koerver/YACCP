@@ -3,13 +3,9 @@
 #include "video_viewer.hpp"
 
 #include "recorders/camera_worker.hpp"
+#include "job_data.hpp"
 
 namespace YACCP {
-    struct VerifyTask {
-        int id;
-        cv::Mat frame;
-    };
-
     class DetectionValidator {
     public:
         DetectionValidator(std::stop_source stopSource,

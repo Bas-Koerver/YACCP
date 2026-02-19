@@ -7,8 +7,10 @@
 
 #include "executors/board_runner.hpp"
 #include "executors/calibration_runner.hpp"
+#if YACCP_HAS_METAVISION
 #include "executors/recording_runner.hpp"
 #include "executors/validation_runner.hpp"
+#endif
 
 #include <CLI/App.hpp>
 #include <GLFW/glfw3.h>
@@ -51,20 +53,22 @@ int main(int argc, char** argv) {
             catch (const std::exception& err) {
                 std::cerr << err.what() << "\n";
             }
-        } else if (*cliCmds.recordingCmd) {
+#if YACCP_HAS_METAVISION
+        } else if (cliCmds.recordingCmd && *cliCmds.recordingCmd) {
             try {
                 exitCode = YACCP::Executor::runRecording(cliCmdConfig, path, dateTime);
             }
             catch (const std::exception& err) {
                 std::cerr << err.what() << "\n";
             }
-        } else if (*cliCmds.validationCmd) {
+        } else if (cliCmds.validationCmd && *cliCmds.validationCmd) {
             try {
                 YACCP::Executor::runValidation(cliCmdConfig, path, dateTime);
             }
             catch (const std::exception& err) {
                 std::cerr << err.what() << "\n";
             }
+#endif
         } else if (*cliCmds.calibrationCmds.calibration) {
             try {
                 YACCP::Executor::runCalibration(cliCmdConfig, cliCmds, path, dateTime);

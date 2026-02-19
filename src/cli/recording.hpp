@@ -9,7 +9,7 @@ namespace YACCP::CLI {
         bool showAvailableCams{};
     };
 
-    struct RecordingCmds {}
+    struct RecordingCmds {};
 
     ::CLI::App* addRecordingCmd(::CLI::App & app, RecordingCmdConfig & config);
 } // namespace YACCP::CLI

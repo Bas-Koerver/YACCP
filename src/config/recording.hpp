@@ -1,13 +1,29 @@
 #ifndef YACCP_SRC_CONFIG_RECORDING_HPP
 #define YACCP_SRC_CONFIG_RECORDING_HPP
+#include <optional>
+#include <string>
+#include <unordered_map>
 #include <variant>
+#include <vector>
+
+#if YACCP_HAS_METAVISION
 #include <metavision/hal/facilities/i_event_trail_filter_module.h>
+#endif
 
 #include <nlohmann/json.hpp>
 
 #include <toml++/toml.hpp>
 
 namespace YACCP::Config {
+#if YACCP_HAS_METAVISION
+    using EventTrailFilterType = Metavision::I_EventTrailFilterModule::Type;
+#else
+    enum class EventTrailFilterType {
+        STC_CUT_TRAIL,
+        STC_KEEP_TRAIL,
+        TRAIL
+    };
+#endif
 
     /**
     * @brief Simple enum to represent different camera worker types.
@@ -17,20 +33,20 @@ namespace YACCP::Config {
         basler,
     };
 
-    Metavision::I_EventTrailFilterModule::Type stringToEftMode(std::string mode);
+    EventTrailFilterType stringToEftMode(std::string mode);
 
-    std::string etfModeToString(Metavision::I_EventTrailFilterModule::Type eftMode);
-
+    std::string etfModeToString(EventTrailFilterType eftMode);
+    
 
     inline std::unordered_map<std::string, WorkerTypes> workerTypesMap{
         {"prophesee", WorkerTypes::prophesee},
         {"basler", WorkerTypes::basler}
     };
 
-    inline std::unordered_map<std::string, Metavision::I_EventTrailFilterModule::Type> eftModesMap{
-        {"stc_cut_trail", Metavision::I_EventTrailFilterModule::Type::STC_CUT_TRAIL},
-        {"stc_keep_trail", Metavision::I_EventTrailFilterModule::Type::STC_KEEP_TRAIL},
-        {"trail", Metavision::I_EventTrailFilterModule::Type::TRAIL}
+    inline std::unordered_map<std::string, EventTrailFilterType> eftModesMap{
+        {"stc_cut_trail", EventTrailFilterType::STC_CUT_TRAIL},
+        {"stc_keep_trail", EventTrailFilterType::STC_KEEP_TRAIL},
+        {"trail", EventTrailFilterType::TRAIL}
     };
 
     struct Basler {
@@ -55,7 +71,7 @@ namespace YACCP::Config {
 
         // https://docs.prophesee.ai/stable/hw/manuals/esp.html#event-trail-filter-stc-trail
         bool etfEnabled{};
-        std::optional<Metavision::I_EventTrailFilterModule::Type> etfMode{};
+        std::optional<EventTrailFilterType> etfMode{};
         std::optional<int> etfThreshold{};
     };
 

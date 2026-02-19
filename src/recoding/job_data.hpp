@@ -1,8 +1,22 @@
 #ifndef YACCP_SRC_RECORDING_JOB_DATA_HPP
 #define YACCP_SRC_RECORDING_JOB_DATA_HPP
-#include "detection_validator.hpp"
+#include <algorithm>
+#include <atomic>
+#include <exception>
+#include <mutex>
+#include <string>
+#include <vector>
+
+#include <readerwriterqueue.h>
+#include <nlohmann/json.hpp>
+#include <opencv2/core.hpp>
 
 namespace YACCP {
+    struct VerifyTask {
+        int id;
+        cv::Mat frame;
+    };
+
     static nlohmann::json matTo2dArray(const cv::Mat& m) {
         CV_Assert(m.type() == CV_64F);
 

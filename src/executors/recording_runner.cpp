@@ -4,7 +4,11 @@
 
 #include "../global_variables/program_defaults.hpp"
 
+#include "../recoding/detection_validator.hpp"
+
+#if YACCP_HAS_PYLON
 #include "../recoding/recorders/basler_cam_worker.hpp"
+#endif
 #include "../recoding/recorders/prophesee_cam_worker.hpp"
 
 #include <thread>
@@ -45,7 +49,11 @@ namespace YACCP::Executor {
         // BUG: Found bug that caused image pairs to become desynced, probably because program slowed down when a lot of information needs processing.
 
         if (cliCmdConfig.recordingCmdConfig.showAvailableCams) {
+#if YACCP_HAS_PYLON
             BaslerCamWorker::listAvailableSources();
+#else
+            std::cout << "Basler support disabled (pylon SDK not found).\n";
+#endif
             PropheseeCamWorker::listAvailableSources();
         } else if (cliCmdConfig.recordingCmdConfig.showAvailableJobs) {
             Utility::checkDataPath(dataPath);
@@ -171,6 +179,7 @@ namespace YACCP::Executor {
                                using T = std::decay_t<T0>;
 
                                if constexpr (std::is_same_v<T, Config::Basler>) {
+#if YACCP_HAS_PYLON
                                    cameraWorkers[index] =
                                        std::make_unique<BaslerCamWorker>(stopSource,
                                                                          camDatas,
@@ -178,6 +187,10 @@ namespace YACCP::Executor {
                                                                          backend,
                                                                          index,
                                                                          jobPath);
+#else
+                                   throw std::runtime_error(
+                                       "Basler worker requested but pylon SDK support is disabled in this build.");
+#endif
                                } else if constexpr (std::is_same_v<T, Config::Prophesee>) {
                                    cameraWorkers[index] =
                                        std::make_unique<PropheseeCamWorker>(stopSource,

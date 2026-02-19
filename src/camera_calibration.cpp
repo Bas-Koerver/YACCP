@@ -1,8 +1,12 @@
 #include "camera_calibration.hpp"
 
+#include "utility.hpp"
+
 #include <CLI/Validators.hpp>
 
-#include "utility.hpp"
+#include <opencv2/calib3d.hpp>
+#include <opencv2/imgcodecs.hpp>
+
 
 namespace YACCP::Calibration {
     static void filterByOverlapIds(
