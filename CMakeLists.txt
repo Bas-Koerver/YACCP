@@ -6,20 +6,20 @@ project(YACCP
 set(CMAKE_CXX_STANDARD 23)
 
 # Prophesee's SDK
-find_package(MetavisionSDK COMPONENTS core stream ui REQUIRED)
-find_package(MetavisionHAL REQUIRED)
+find_package(MetavisionSDK 5.1.0 COMPONENTS core stream ui REQUIRED)
+find_package(MetavisionHAL 5.1.0 REQUIRED)
 
 # Basler's SDK
-find_package(pylon REQUIRED)
+find_package(pylon 10.3.2.636 REQUIRED)
 
 # General packages
-find_package(Boost REQUIRED)
-find_package(OpenCV COMPONENTS core imgproc imgcodecs videoio objdetect REQUIRED)
+find_package(Boost 1.78.0 REQUIRED)
+find_package(OpenCV 4.8.0 COMPONENTS core imgproc imgcodecs videoio objdetect REQUIRED)
 
 # CLI and config
-find_package(nlohmann_json REQUIRED)
-find_package(tomlplusplus CONFIG REQUIRED)
-find_package(CLI11 CONFIG REQUIRED)
+find_package(nlohmann_json 3.12.0 REQUIRED)
+find_package(tomlplusplus 3.4.0 CONFIG REQUIRED)
+find_package(CLI11 2.6.1 CONFIG REQUIRED)
 
 add_compile_definitions(BOOST_BIND_GLOBAL_PLACEHOLDERS) ## needed to get rid of warning `#pragma message: The practice of declaring the Bind placeholders (_1, _2, ...)`
 
