@@ -6,85 +6,47 @@
 #include <opencv2/imgproc.hpp>
 
 
-class FrameHandler : public Pylon::CImageEventHandler {
-public:
-    FrameHandler(std::mutex& m, cv::Mat& f, int& index, GenApi::INodeMap& np)
-        : frame_mutex_{m},
-          frame_{f},
-          id_{index},
-          nodeMap_{np} {
-    }
-
-
-    void OnImageGrabbed(Pylon::CInstantCamera& cam, const Pylon::CGrabResultPtr& ptrGrabResult) override {
-        if (!ptrGrabResult->GrabSucceeded()) {
-            return;
+namespace {
+    class FrameHandler : public Pylon::CImageEventHandler {
+    public:
+        FrameHandler(std::mutex& m, cv::Mat& f, int& index, GenApi::INodeMap& np) :
+            frame_mutex_{m},
+            frame_{f},
+            id_{index},
+            nodeMap_{np} {
         }
 
-        const int width{static_cast<int>(ptrGrabResult->GetWidth())};
-        const int height{static_cast<int>(ptrGrabResult->GetHeight())};
-        cv::Mat tempFrameBGR;
-        int tempIndex{};
 
-        //BayerRG8 (RGGB)
-        cv::Mat tempFrame(height, width, CV_8UC1, ptrGrabResult->GetBuffer());
-        cv::cvtColor(tempFrame, tempFrameBGR, cv::COLOR_BayerRGGB2BGR);
+        void OnImageGrabbed(Pylon::CInstantCamera& cam, const Pylon::CGrabResultPtr& ptrGrabResult) override {
+            if (!ptrGrabResult->GrabSucceeded()) {
+                return;
+            }
 
-        tempIndex = Pylon::CIntegerParameter(nodeMap_, "CounterValue").GetValue();
+            const int width{static_cast<int>(ptrGrabResult->GetWidth())};
+            const int height{static_cast<int>(ptrGrabResult->GetHeight())};
+            cv::Mat tempFrameBGR;
+            int tempIndex{};
 
-        {
-            std::lock_guard<std::mutex> lock{frame_mutex_};
-            tempFrameBGR.copyTo(frame_);
-            id_ = tempIndex;
+            //BayerRG8 (RGGB)
+            cv::Mat tempFrame(height, width, CV_8UC1, ptrGrabResult->GetBuffer());
+            cv::cvtColor(tempFrame, tempFrameBGR, cv::COLOR_BayerRGGB2BGR);
+
+            tempIndex = Pylon::CIntegerParameter(nodeMap_, "CounterValue").GetValue();
+
+            {
+                std::lock_guard<std::mutex> lock{frame_mutex_};
+                tempFrameBGR.copyTo(frame_);
+                id_ = tempIndex;
+            }
         }
-    }
 
 
-private:
-    std::mutex& frame_mutex_;
-    cv::Mat& frame_;
-    int& id_;
-    GenApi::INodeMap& nodeMap_;
-};
-
-namespace YACCP {
-    void BaslerCamWorker::setPixelFormat(GenApi::INodeMap& nodeMap) {
-        // TODO: Add exceptions for unsupported pixel formats.
-        // TODO: auto configure pixel format based on camera capabilities.
-        // Configure pixel format and exposure time (FPS).
-        Pylon::CEnumParameter(nodeMap, "PixelFormat").SetValue("BayerRG8");
-        Pylon::CFloatParameter(nodeMap, "ExposureTime").SetValue(
-            (1.0 / static_cast<double>(recordingConfig_.fps)) * 1e6);
-    }
-
-
-    void setGainControl(GenApi::INodeMap& nodeMap) {
-        Pylon::CFloatParameter(nodeMap, "AutoGainLowerLimit").SetValue(0.0);
-        Pylon::CFloatParameter(nodeMap, "AutoGainUpperLimit").SetValue(48.0);
-        // This controls how bright the automatic control will aim for.
-        Pylon::CFloatParameter(nodeMap, "AutoTargetBrightness").SetValue(0.11);
-        Pylon::CEnumParameter(nodeMap, "AutoFunctionProfile").SetValue("MinimizeExposureTime");
-        Pylon::CEnumParameter(nodeMap, "GainAuto").SetValue("Continuous");
-        Pylon::CEnumParameter(nodeMap, "ExposureAuto").SetValue("Off");
-    }
-
-
-    void setTimingInterfaces(GenApi::INodeMap& nodeMap) {
-        // TODO: Add exception handling for unsupported timing interfaces.
-        // Enable trigger signals on exposure active.
-        Pylon::CEnumParameter(nodeMap, "LineSelector").SetValue("Line2");
-        Pylon::CEnumParameter(nodeMap, "LineMode").SetValue("Output");
-        Pylon::CEnumParameter(nodeMap, "LineSource").SetValue("ExposureActive");
-    }
-
-
-    void setCounters(GenApi::INodeMap& nodeMap) {
-        // Enable frame count.
-        Pylon::CEnumParameter(nodeMap, "CounterSelector").SetValue("Counter1");
-        Pylon::CEnumParameter(nodeMap, "CounterEventSource").SetValue("ExposureActive");
-        Pylon::CEnumParameter(nodeMap, "CounterEventActivation").SetValue("RisingEdge");
-        Pylon::CCommandParameter(nodeMap, "CounterReset").Execute();
-    }
+    private:
+        std::mutex& frame_mutex_;
+        cv::Mat& frame_;
+        int& id_;
+        GenApi::INodeMap& nodeMap_;
+    };
 
 
     std::pair<int, int> getDims(GenApi::INodeMap& nodeMap) {
@@ -93,12 +55,157 @@ namespace YACCP {
             static_cast<int>(Pylon::CIntegerParameter(nodeMap, "Height").GetValue())
         };
     }
+}
+
+namespace YACCP {
+    void BaslerCamWorker::setPixelFormat(GenApi::INodeMap& nodeMap) {
+        // Configure pixel format and exposure time (FPS).
+        if (configBackend_.pixelFormat.has_value()) {
+            Pylon::CEnumParameter(nodeMap, "PixelFormat").SetValue(configBackend_.pixelFormat.value().data());
+        } else {
+            configBackend_.pixelFormat = Pylon::CEnumParameter(nodeMap, "PixelFormat").GetValue();
+        }
+    }
+
+
+    void BaslerCamWorker::setExposureControl(GenApi::INodeMap& nodeMap) {
+        if (configBackend_.exposureTime.has_value()) {
+            Pylon::CFloatParameter(nodeMap, "ExposureTime").SetValue(configBackend_.exposureTime.value());
+        } else {
+            configBackend_.exposureTime = Pylon::CFloatParameter(nodeMap, "ExposureTime").GetValue();
+        }
+
+        if (configBackend_.exposureAuto.has_value()) {
+            Pylon::CEnumParameter(nodeMap, "ExposureAuto").SetValue(configBackend_.exposureAuto.value().data());
+        } else {
+            configBackend_.exposureAuto = Pylon::CEnumParameter(nodeMap, "ExposureAuto").GetValue();
+        }
+
+        if (configBackend_.autoExposureLowerLimit.has_value()) {
+            Pylon::CFloatParameter(nodeMap, "AutoExposureTimeLowerLimit").SetValue(
+                configBackend_.autoExposureLowerLimit.value());
+        } else {
+            configBackend_.autoExposureLowerLimit = Pylon::CFloatParameter(nodeMap, "AutoExposureTimeLowerLimit").
+                GetValue();
+        }
+
+        if (configBackend_.autoExposureUpperLimit.has_value()) {
+            Pylon::CFloatParameter(nodeMap, "AutoExposureTimeUpperLimit").SetValue(
+                configBackend_.autoExposureUpperLimit.value());
+        } else {
+            configBackend_.autoExposureUpperLimit = Pylon::CFloatParameter(nodeMap, "AutoExposureTimeUpperLimit").
+                GetValue();
+        }
+    }
+
+
+    void BaslerCamWorker::setGainControl(GenApi::INodeMap& nodeMap) {
+        // TODO: add GainSelector
+        if (configBackend_.gainAuto.has_value()) {
+            Pylon::CEnumParameter(nodeMap, "GainAuto").SetValue(configBackend_.gainAuto.value().data());
+        } else {
+            configBackend_.gainAuto = Pylon::CEnumParameter(nodeMap, "GainAuto").GetValue();
+        }
+
+        if (configBackend_.autoGainLowerLimit.has_value()) {
+            Pylon::CFloatParameter(nodeMap, "AutoGainLowerLimit").SetValue(configBackend_.autoGainLowerLimit.value());
+        } else {
+            configBackend_.autoGainLowerLimit = Pylon::CFloatParameter(nodeMap, "AutoGainLowerLimit").GetValue();
+        }
+
+        if (configBackend_.autoGainUpperLimit.has_value()) {
+            Pylon::CFloatParameter(nodeMap, "AutoGainUpperLimit").SetValue(configBackend_.autoGainUpperLimit.value());
+        } else {
+            configBackend_.autoGainUpperLimit = Pylon::CFloatParameter(nodeMap, "AutoGainUpperLimit").GetValue();
+        }
+    }
+
+
+    void BaslerCamWorker::setAutoFunctionControl(GenApi::INodeMap& nodeMap) {
+        // This controls how bright the automatic control will aim for.
+        if (configBackend_.autoTargetBrightness.has_value()) {
+            Pylon::CFloatParameter(nodeMap, "AutoTargetBrightness").SetValue(
+                configBackend_.autoTargetBrightness.value());
+        } else {
+            configBackend_.autoTargetBrightness = Pylon::CFloatParameter(nodeMap, "AutoTargetBrightness").GetValue();
+        }
+
+        if (configBackend_.autoFunctionProfile.has_value()) {
+            Pylon::CEnumParameter(nodeMap, "AutoFunctionProfile").SetValue(
+                configBackend_.autoFunctionProfile.value().data());
+        } else {
+            configBackend_.autoFunctionProfile = Pylon::CEnumParameter(nodeMap, "AutoFunctionProfile").GetValue();
+        }
+    }
+
+
+    void BaslerCamWorker::setDigitalIo(GenApi::INodeMap& nodeMap) {
+        Pylon::CEnumParameter lineSelector(nodeMap, "LineSelector");
+
+        GenApi::StringList_t lines;
+        // Get all possible lines
+        lineSelector.GetSymbolics(lines);
+        std::vector<std::vector<std::string> > lineIos;
+
+        for (const auto& line : lines) {
+            lineSelector.SetValue(line);
+            Pylon::CEnumParameter lineMode(nodeMap, "LineMode");
+            Pylon::CEnumParameter lineSource(nodeMap, "LineSource");
+
+            if (configBackend_.lineIos.has_value()) {
+                std::pair containsLine{false, -1};
+                for (auto i{0}; i < configBackend_.lineIos.value().size(); ++i) {
+                    if (configBackend_.lineIos.value()[i].front() == line.c_str()) {
+                        containsLine.first = true;
+                        containsLine.second = i;
+                    }
+                }
+
+                if (containsLine.first) {
+                    if (!configBackend_.lineIos.value()[containsLine.second][1].empty() && lineMode.IsWritable()) {
+                        lineMode.SetValue(
+                            configBackend_.lineIos.value()[containsLine.second][1].data());
+                    }
+                    if (!configBackend_.lineIos.value()[containsLine.second].back().empty() && lineSource.
+                        IsWritable()) {
+                        lineSource.SetValue(
+                            configBackend_.lineIos.value()[containsLine.second].back().data());
+                    }
+                } else {
+                    std::vector<std::string> lineIo;
+                    lineIo.emplace_back(line);
+                    lineIo.emplace_back(lineMode.IsReadable() ? lineMode.GetValue().c_str() : "");
+                    lineIo.emplace_back(lineSource.IsReadable() ? lineSource.GetValue().c_str() : "");
+                    configBackend_.lineIos.value().emplace_back(lineIo);
+                }
+            } else {
+                std::vector<std::string> lineIo;
+                lineIo.emplace_back(line);
+                lineIo.emplace_back(lineMode.IsReadable() ? lineMode.GetValue().c_str() : "");
+                lineIo.emplace_back(lineSource.IsReadable() ? lineSource.GetValue().c_str() : "");
+                lineIos.emplace_back(lineIo);
+            }
+        }
+        if (!configBackend_.lineIos.has_value()) {
+            // configBackend_.lineIos.emplace();
+            configBackend_.lineIos = lineIos;
+        }
+    }
+
+
+    void BaslerCamWorker::setCounters(GenApi::INodeMap& nodeMap) {
+        // Enable frame count.
+        Pylon::CEnumParameter(nodeMap, "CounterSelector").SetValue("Counter1");
+        Pylon::CEnumParameter(nodeMap, "CounterEventSource").SetValue("ExposureActive");
+        Pylon::CEnumParameter(nodeMap, "CounterEventActivation").SetValue("RisingEdge");
+        Pylon::CCommandParameter(nodeMap, "CounterReset").Execute();
+    }
 
 
     BaslerCamWorker::BaslerCamWorker(std::stop_source stopSource,
                                      std::vector<CamData>& camDatas,
                                      Config::RecordingConfig& recordingConfig,
-                                     const Config::Basler& configBackend,
+                                     Config::Basler& configBackend,
                                      const int index,
                                      const std::filesystem::path& jobPath) :
         CameraWorker(stopSource, camDatas, recordingConfig, index, jobPath),
@@ -148,7 +255,7 @@ namespace YACCP {
             if (lstDevices.empty()) {
                 std::cerr << "No Basler cameras found.\n";
                 // Pylon::PylonTerminate();
-                camData_.runtimeData.exitCode = 2;
+                camData_.runtimeData.exitCode = 1;
                 stopSource_.request_stop();
                 return;
             }
@@ -166,18 +273,41 @@ namespace YACCP {
                 camData_.runtimeData.isOpen.store(true);
             }
         }
-        catch (const GenICam::GenericException& e) {
-            std::cerr << "Pylon error: " << e.GetDescription() << "\n";
-            Pylon::PylonTerminate();
-            camData_.runtimeData.exitCode = EXIT_FAILURE;
-            stopSource_.request_stop();
+        catch (GenICam::GenericException& e) {
+            camData_.runtimeData.exitCode = 1;
+            camData_.runtimeData.e = std::make_exception_ptr(std::runtime_error(e.GetDescription()));
+            (void)stopSource_.request_stop();
+            return;
+        }
+        catch (...) {
+            camData_.runtimeData.exitCode = 1;
+            camData_.runtimeData.e = std::current_exception();
+            (void)stopSource_.request_stop();
             return;
         }
 
         if (camData_.runtimeData.isOpen.load()) {
             cam.Open();
             GenApi::INodeMap& nodeMap = cam.GetNodeMap();
-            auto [width, height] = getSetNodeMapParameters(nodeMap);
+            int width;
+            int height;
+
+            try {
+                std::tie(width, height) = getSetNodeMapParameters(nodeMap);
+            }
+            catch (GenICam::GenericException& e) {
+                camData_.runtimeData.exitCode = 1;
+                camData_.runtimeData.e = std::make_exception_ptr(std::runtime_error(e.GetDescription()));
+                (void)stopSource_.request_stop();
+                return;
+            }
+            catch (...) {
+                camData_.runtimeData.exitCode = 1;
+                camData_.runtimeData.e = std::current_exception();
+                (void)stopSource_.request_stop();
+                return;
+            }
+
             camData_.info.resolution.width = width;
             camData_.info.resolution.height = height;
 
@@ -260,10 +390,12 @@ namespace YACCP {
 
     std::pair<int, int> BaslerCamWorker::getSetNodeMapParameters(GenApi::INodeMap& nodeMap) {
         setPixelFormat(nodeMap);
-        // TODO: Make configurable.
+        setExposureControl(nodeMap);
         setGainControl(nodeMap);
-        setTimingInterfaces(nodeMap);
+        setAutoFunctionControl(nodeMap);
+        setDigitalIo(nodeMap);
         setCounters(nodeMap);
+
         return getDims(nodeMap);
     }
 }

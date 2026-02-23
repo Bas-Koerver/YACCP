@@ -6,14 +6,6 @@
 #include "viewing.hpp"
 
 namespace YACCP::Config {
-    struct FileConfig {
-        BoardConfig boardConfig;
-        DetectionConfig detectionConfig;
-        RecordingConfig recordingConfig;
-        ViewingConfig viewingConfig;
-    };
-
-
     template <typename T>
     [[nodiscard]] T requireVariable(const toml::table& tbl, std::string_view key, std::string_view keyPath = {}) {
         if (auto value = tbl[key].value < T > ()) return *value;
@@ -24,6 +16,17 @@ namespace YACCP::Config {
             "Variable: '" + std::string(key) + "' at [" + std::string(keyPath) + "] is missing or invalid");
     }
 
+
+    struct FileConfig {
+        BoardConfig boardConfig;
+        DetectionConfig detectionConfig;
+        RecordingConfig recordingConfig;
+        ViewingConfig viewingConfig;
+    };
+
+    void loadConfig(FileConfig& config, const std::filesystem::path& path, bool boardCreation = false);
+
+    void loadBoardConfig(FileConfig& config, const std::filesystem::path& path, bool boardCreation = true);
 
     /*
      * For serialising the struct to JSON
@@ -42,11 +45,6 @@ namespace YACCP::Config {
         j.at("detectionConfig").get_to(f.detectionConfig);
         j.at("recordingConfig").get_to(f.recordingConfig);
     }
-
-
-    void loadConfig(FileConfig& config, const std::filesystem::path& path, bool boardCreation = false);
-
-    void loadBoardConfig(FileConfig& config, const std::filesystem::path& path, bool boardCreation = true);
 } // YACCP::Config
 
 #endif //YACCP_SRC_CONFIG_ORCHESTRATOR_HPP

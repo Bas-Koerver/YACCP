@@ -1,5 +1,6 @@
 #ifndef YACCP_SRC_GLOBAL_VARIABLES_CONFIG_DEFAULTS_HPP
 #define YACCP_SRC_GLOBAL_VARIABLES_CONFIG_DEFAULTS_HPP
+#include <cmath>
 
 namespace YACCP::GlobalVariables {
     // Default [board] variables
@@ -17,7 +18,8 @@ namespace YACCP::GlobalVariables {
     // Default [recording] variables
     inline constexpr auto recordingFps{30};
     inline constexpr auto detectionInterval{2}; // seconds
-    inline constexpr auto accumulationTime{33333};
+    inline constexpr auto accumulationTime{static_cast<int>((1e6 + recordingFps / 2) / recordingFps)};
+    inline constexpr auto exposureTime{static_cast<int>((1e6 + recordingFps / 2) / recordingFps)};
     inline constexpr auto ercEnabled{false};
     inline constexpr auto etfEnabled{false};
 

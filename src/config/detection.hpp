@@ -104,6 +104,8 @@ namespace YACCP::Config {
         cv::aruco::DetectorParameters detectorParameters{};
     };
 
+    void parseDetectionConfig(const toml::table& tbl, DetectionConfig& config);
+
 
     inline void to_json(nlohmann::json& j, const DetectionConfig& d) {
         j = {
@@ -121,9 +123,6 @@ namespace YACCP::Config {
         (void)j.at("charucoParameters").get_to(d.charucoParameters);
         (void)j.at("detectorParameters").get_to(d.detectorParameters);
     }
-
-
-    void parseDetectionConfig(const toml::table& tbl, DetectionConfig& config);
 } // YACCP::Config
 
 #endif //YACCP_SRC_CONFIG_DETECTION_HPP

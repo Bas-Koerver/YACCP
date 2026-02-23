@@ -11,7 +11,7 @@
 #include <metavision/sdk/core/algorithms/polarity_filter_algorithm.h>
 #include <metavision/sdk/core/utils/cd_frame_generator.h>
 
-namespace YACCP {
+namespace {
     std::string sourceTypeToString(Metavision::OnlineSourceType type) {
         switch (type) {
         case Metavision::OnlineSourceType::EMBEDDED:
@@ -24,77 +24,78 @@ namespace YACCP {
             return "UNKNOWN";
         }
     }
+}
 
-
+namespace YACCP {
     void PropheseeCamWorker::configureBiases(Metavision::Device& device) const {
         const auto biases{device.get_facility<::Metavision::I_LL_Biases>()};
         // bias_diff
-        if (configBackend_.biasDiff) {
-            if (!biases->set("bias_diff", *configBackend_.biasDiff)) {
+        if (configBackend_.biasDiff.has_value()) {
+            if (!biases->set("bias_diff", configBackend_.biasDiff.value())) {
                 throw std::runtime_error("Failed to set bias_diff, "
-                    "the camera: " + camData_.info.camName +
-                    ". With index: " + std::to_string(camData_.info.camIndexId) +
-                    ". Probably doesn't support this.");
+                                         "the camera: " + camData_.info.camName +
+                                         ". With index: " + std::to_string(camData_.info.camIndexId) +
+                                         ". Probably doesn't support this.");
             }
         } else {
             configBackend_.biasDiff = biases->get("bias_diff");
         }
 
         // bias_diff_on
-        if (configBackend_.biasDiffOn) {
-            if (!biases->set("bias_diff_on", *configBackend_.biasDiffOn)) {
+        if (configBackend_.biasDiffOn.has_value()) {
+            if (!biases->set("bias_diff_on", configBackend_.biasDiffOn.value())) {
                 throw std::runtime_error("Failed to set bias_diff_on, "
-                    "the camera: " + camData_.info.camName +
-                    ". With index: " + std::to_string(camData_.info.camIndexId) +
-                    ". Probably doesn't support this.");
+                                         "the camera: " + camData_.info.camName +
+                                         ". With index: " + std::to_string(camData_.info.camIndexId) +
+                                         ". Probably doesn't support this.");
             }
         } else {
             configBackend_.biasDiffOn = biases->get("bias_diff_on");
         }
 
         // bias_diff_off
-        if (configBackend_.biasDiffOff) {
-            if (!biases->set("bias_diff_off", *configBackend_.biasDiffOff)) {
+        if (configBackend_.biasDiffOff.has_value()) {
+            if (!biases->set("bias_diff_off", configBackend_.biasDiffOff.value())) {
                 throw std::runtime_error("Failed to set bias_diff_off, "
-                    "the camera: " + camData_.info.camName +
-                    ". With index: " + std::to_string(camData_.info.camIndexId) +
-                    ". Probably doesn't support this.");
+                                         "the camera: " + camData_.info.camName +
+                                         ". With index: " + std::to_string(camData_.info.camIndexId) +
+                                         ". Probably doesn't support this.");
             }
         } else {
             configBackend_.biasDiffOff = biases->get("bias_diff_off");
         }
 
         // bias_fo
-        if (configBackend_.biasFo) {
-            if (!biases->set("bias_fo", *configBackend_.biasFo)) {
+        if (configBackend_.biasFo.has_value()) {
+            if (!biases->set("bias_fo", configBackend_.biasFo.value())) {
                 throw std::runtime_error("Failed to set bias_fo, "
-                    "the camera: " + camData_.info.camName +
-                    ". With index: " + std::to_string(camData_.info.camIndexId) +
-                    ". Probably doesn't support this.");
+                                         "the camera: " + camData_.info.camName +
+                                         ". With index: " + std::to_string(camData_.info.camIndexId) +
+                                         ". Probably doesn't support this.");
             }
         } else {
             configBackend_.biasFo = biases->get("bias_fo");
         }
 
         // bias_hpf
-        if (configBackend_.biasHpf) {
-            if (!biases->set("bias_hpf", *configBackend_.biasHpf)) {
+        if (configBackend_.biasHpf.has_value()) {
+            if (!biases->set("bias_hpf", configBackend_.biasHpf.value())) {
                 throw std::runtime_error("Failed to set bias_hpf, "
-                    "the camera: " + camData_.info.camName +
-                    ". With index: " + std::to_string(camData_.info.camIndexId) +
-                    ". Probably doesn't support this.");
+                                         "the camera: " + camData_.info.camName +
+                                         ". With index: " + std::to_string(camData_.info.camIndexId) +
+                                         ". Probably doesn't support this.");
             }
         } else {
             configBackend_.biasHpf = biases->get("bias_hpf");
         }
 
         // bias_refr
-        if (configBackend_.biasRefr) {
-            if (!biases->set("bias_refr", *configBackend_.biasRefr)) {
+        if (configBackend_.biasRefr.has_value()) {
+            if (!biases->set("bias_refr", configBackend_.biasRefr.value())) {
                 throw std::runtime_error("Failed to set bias_refr, "
-                    "for the camera: " + camData_.info.camName +
-                    ". With index: " + std::to_string(camData_.info.camIndexId) +
-                    ". Probably doesn't support this.");
+                                         "for the camera: " + camData_.info.camName +
+                                         ". With index: " + std::to_string(camData_.info.camIndexId) +
+                                         ". Probably doesn't support this.");
             }
         } else {
             configBackend_.biasRefr = biases->get("bias_refr");
@@ -126,9 +127,9 @@ namespace YACCP {
         if (configBackend_.etfEnabled) {
             if (!etf->enable(true)) {
                 throw std::runtime_error("Failed to set event trail filter, "
-                    "the camera: " + camData_.info.camName +
-                    ". With index: " + std::to_string(camData_.info.camIndexId) +
-                    ". Probably doesn't support this.");
+                                         "the camera: " + camData_.info.camName +
+                                         ". With index: " + std::to_string(camData_.info.camIndexId) +
+                                         ". Probably doesn't support this.");
             }
 
             if (configBackend_.etfMode) {
@@ -278,7 +279,7 @@ namespace YACCP {
             Metavision::OnDemandFrameGenerationAlgorithm onDemandFrameGenerator{
                 geometry.get_width(),
                 geometry.get_height(),
-                static_cast<uint32_t>(std::round(1e6 / static_cast<double>(recordingConfig_.fps)))
+                static_cast<uint32_t>(configBackend_.accumulationTime)
             };
 
             (void)cdFrameGenerator.start(

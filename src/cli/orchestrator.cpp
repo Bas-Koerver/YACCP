@@ -22,14 +22,13 @@ namespace YACCP::CLI {
         // boardCreation CLI options
         cliCmds.boardCreationCmd = addBoardCreationCmd(cliCmds.app, cliCmdConfig.boardCreationCmdConfig);
 
-
 #if YACCP_HAS_METAVISION
         // Detection recording CLI options
-        cliCmds.recordingCmd = addRecordingCmd(cliCmds.app, cliCmdConfig.recordingCmdConfig);
+        cliCmds.recordingCmds = addRecordingCmd(cliCmds.app, cliCmdConfig.recordingCmdConfig);
         // Image validation CLI options
         cliCmds.validationCmd = addValidationCmd(cliCmds.app, cliCmdConfig.validationCmdConfig);
 #else
-        cliCmds.recordingCmd = nullptr;
+        // cliCmds.recordingCmds = nullptr;
         cliCmds.validationCmd = nullptr;
 #endif
 

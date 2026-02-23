@@ -22,7 +22,7 @@ namespace YACCP::CLI {
     struct CliCmds {
         ::CLI::App app{};
         ::CLI::App* boardCreationCmd{};
-        ::CLI::App* recordingCmd{};
+        RecordingCmds recordingCmds{};
         ::CLI::App* validationCmd{};
         CalibrationCmds calibrationCmds{};
     };

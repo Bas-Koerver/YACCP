@@ -4,28 +4,7 @@
 
 #include "../global_variables/config_defaults.hpp"
 
-#include <boost/algorithm/string/case_conv.hpp>
-
 namespace YACCP::Config {
-    BoardTypes stringToBoardType(std::string board) {
-        boost::algorithm::to_lower(board);
-        if (const auto it = boardTypesMap.find(board); it != boardTypesMap.end()) {
-            return it->second;
-        }
-        throw std::runtime_error("board worker type: '" + board + "' does not exist.");
-    }
-
-
-    std::string boardTypeToString(const BoardTypes boardType) {
-        for (const auto& [key, value] : boardTypesMap) {
-            if (value == boardType) {
-                return key;
-            }
-        }
-        throw std::runtime_error("unknown board enum type");
-    }
-
-
     void parseBoardConfig(const toml::table& tbl, BoardConfig& config, const bool boardCreation) {
         // [board] configuration variables.
         const auto* boardTbl{tbl["board"].as_table()};

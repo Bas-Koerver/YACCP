@@ -14,7 +14,7 @@ namespace YACCP {
         BaslerCamWorker(std::stop_source stopSource,
                         std::vector<CamData>& camDatas,
                         Config::RecordingConfig& recordingConfig,
-                        const Config::Basler& configBackend,
+                        Config::Basler& configBackend,
                         int index,
                         const std::filesystem::path& jobPath);
 
@@ -26,10 +26,20 @@ namespace YACCP {
 
 
     private:
-        const Config::Basler& configBackend_;
-        int requestedFrame_{1};    // Start from frame 1
+        Config::Basler& configBackend_;
+        int requestedFrame_{1}; // Start from frame 1
 
         void setPixelFormat(GenApi::INodeMap& nodeMap);
+
+        void setExposureControl(GenApi::INodeMap& nodeMap);
+
+        void setGainControl(GenApi::INodeMap& nodeMap);
+
+        void setAutoFunctionControl(GenApi::INodeMap& nodeMap);
+
+        void setDigitalIo(GenApi::INodeMap& nodeMap);
+
+        void setCounters(GenApi::INodeMap& nodeMap);
 
         [[nodiscard]] std::pair<int, int> getSetNodeMapParameters(GenApi::INodeMap& nodeMap);
     };

@@ -54,27 +54,27 @@ int main(int argc, char** argv) {
                 std::cerr << err.what() << "\n";
             }
 #if YACCP_HAS_METAVISION
-        } else if (cliCmds.recordingCmd && *cliCmds.recordingCmd) {
-            try {
-                exitCode = YACCP::Executor::runRecording(cliCmdConfig, path, dateTime);
-            }
-            catch (const std::exception& err) {
-                std::cerr << err.what() << "\n";
-            }
-        } else if (cliCmds.validationCmd && *cliCmds.validationCmd) {
-            try {
-                YACCP::Executor::runValidation(cliCmdConfig, path, dateTime);
-            }
-            catch (const std::exception& err) {
-                std::cerr << err.what() << "\n";
-            }
+        } else if (*cliCmds.recordingCmds.record) {
+                try {
+                    exitCode = YACCP::Executor::runRecording(cliCmdConfig, cliCmds, path, dateTime);
+                }
+                catch (const std::exception& err) {
+                    std::cerr << err.what() << "\n";
+                    exitCode = 1;
+                }
+            } else if (*cliCmds.validationCmd) {
+                try {
+                    YACCP::Executor::runValidation(cliCmdConfig, path, dateTime);
+                }
+                catch (const std::exception& err) {
+                    std::cerr << err.what() << "\n";
+                }
 #endif
-        } else if (*cliCmds.calibrationCmds.calibration) {
+        } else if (*cliCmds.calibrationCmds.calibrate) {
             try {
                 YACCP::Executor::runCalibration(cliCmdConfig, cliCmds, path, dateTime);
             }
-            catch (const std::exception&
-                err) {
+            catch (const std::exception& err) {
                 std::cerr << err.what() << "\n";
             }
         } else {
@@ -84,4 +84,3 @@ int main(int argc, char** argv) {
 
     return exitCode;
 }
-

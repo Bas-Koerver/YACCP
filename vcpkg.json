@@ -11,5 +11,9 @@
   }, {
     "name" : "tomlplusplus",
     "version>=" : "3.4.0#1"
+  },
+    {
+      "name": "readerwriterqueue",
+      "version>=": "1.0.7"
   } ]
 }

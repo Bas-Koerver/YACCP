@@ -200,8 +200,6 @@ namespace YACCP {
         double scaleX{static_cast<double>(resolutionWidth_) / frameComposer_.get_total_width()};
         double scaleY{static_cast<double>(resolutionHeight_) / frameComposer_.get_total_height()};
         double scale{std::min(scaleX, scaleY)};
-        Utility::AlternativeBuffer buffer;
-        buffer.enable();
         // BUG: There is a printing race at the moment between enabling this buffer and the camera threads printing the cameras their using.
         printKeyMap();
         // TODO: Make this a more global function where other functions can supply a vector of keybindings

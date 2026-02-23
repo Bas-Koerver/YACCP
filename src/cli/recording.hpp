@@ -9,9 +9,16 @@ namespace YACCP::CLI {
         bool showAvailableCams{};
     };
 
-    struct RecordingCmds {};
+    struct RecordingCmds {
+        ::CLI::App* record{};
+        ::CLI::App* calib_images{};
+        ::CLI::App* dataset{};
+    };
 
-    ::CLI::App* addRecordingCmd(::CLI::App & app, RecordingCmdConfig & config);
+    RecordingCmds addRecordingCmd(::CLI::App & app, RecordingCmdConfig & config);
 } // namespace YACCP::CLI
 
 #endif // YACCP_SRC_CLI_RECORDING_HPP
+
+//record calib-images
+// record dataset

@@ -9,7 +9,7 @@ namespace YACCP::CLI {
     };
 
     struct CalibrationCmds {
-        ::CLI::App* calibration{};
+        ::CLI::App* calibrate{};
         ::CLI::App* mono{};
         ::CLI::App* stereo{};
     };

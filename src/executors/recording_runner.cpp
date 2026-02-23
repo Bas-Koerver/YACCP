@@ -42,6 +42,7 @@ namespace YACCP::Executor {
 
 
     int runRecording(CLI::CliCmdConfig& cliCmdConfig,
+                     CLI::CliCmds& cliCmds,
                      const std::filesystem::path& path,
                      const std::string& dateTime) {
         const std::filesystem::path dataPath{path / "data"};

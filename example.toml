@@ -102,18 +102,36 @@ type = "basler"
 # Required: 0..N-1 left-to-right
 placement =
 
-# Optional: required if you have multiple cameras of the same type and want reproducibility
+# Optional: required if you have multiple cameras of the same type.
 #cam_uuid =
+#pixel_format = "BayerRG8"
+#exposure_time =
+#exposure_auto =
+#auto_exposure_lower_limit =
+#auto_exposure_upper_limit =
+#gain_auto
+#auto_gain_lower_limit =
+#auto_gain_upper_limit =
+#auto_target_brightness =
+#auto_function_profile =
+
+# https://docs.baslerweb.com/line-source
+[[recording.workers.line_io]]
+line = "Line2"
+mode = "Output"
+source = "ExposureActive"
+
 
 [[recording.workers]]
 type = "prophesee"
 placement =
-
+# Optional: required if you have multiple cameras of the same type.
 #cam_uuid =
+
 #accumulation_time = 33333
 #save_event_file = true
 
-# Required (if you treat it as required): depends on your pipeline
+# Required
 falling_edge_polarity =
 
 # Optional: biases
