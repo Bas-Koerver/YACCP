@@ -29,19 +29,19 @@ namespace YACCP {
         Config::Basler& configBackend_;
         int requestedFrame_{1}; // Start from frame 1
 
-        void setPixelFormat(GenApi::INodeMap& nodeMap);
+        void setPixelFormat(GenApi::INodeMap& nodeMap) const;
 
-        void setExposureControl(GenApi::INodeMap& nodeMap);
+        void setExposureControl(GenApi::INodeMap& nodeMap) const;
 
-        void setGainControl(GenApi::INodeMap& nodeMap);
+        void setGainControl(GenApi::INodeMap& nodeMap) const;
 
-        void setAutoFunctionControl(GenApi::INodeMap& nodeMap);
+        void setAutoFunctionControl(GenApi::INodeMap& nodeMap) const;
 
-        void setDigitalIo(GenApi::INodeMap& nodeMap);
+        void setDigitalIo(GenApi::INodeMap& nodeMap) const;
 
-        void setCounters(GenApi::INodeMap& nodeMap);
+        static void setCounters(GenApi::INodeMap& nodeMap);
 
-        [[nodiscard]] std::pair<int, int> getSetNodeMapParameters(GenApi::INodeMap& nodeMap);
+        [[nodiscard]] std::pair<int, int> getSetNodeMapParameters(GenApi::INodeMap& nodeMap) const;
     };
 } // YACCP
 

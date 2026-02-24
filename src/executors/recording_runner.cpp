@@ -47,7 +47,9 @@ namespace YACCP::Executor {
                      const std::string& dateTime) {
         const std::filesystem::path dataPath{path / "data"};
 
-        // BUG: Found bug that caused image pairs to become desynced, probably because program slowed down when a lot of information needs processing.
+        // BUG: Found bug that caused image pairs to become desynced, probably because prophesee worker slowed down when a lot of information needs processing.
+        // BUG: This is probably happening because the loop with the OnDemandFrameGenerationAlgorithm has not yet caught up generating all events.
+        // BUG: So it just takes the last events which are behind the other camera.
 
         if (cliCmdConfig.recordingCmdConfig.showAvailableCams) {
 #if YACCP_HAS_PYLON
@@ -215,6 +217,7 @@ namespace YACCP::Executor {
             auto allSlavesRunning{false};
             while (!allSlavesRunning) {
                 if (stopSource.stop_requested()) {
+                    buffer.disable();
                     rethrowIfAny(camDatas, threads);
                     return getWorstStopCode(camDatas);
                 }
@@ -246,6 +249,7 @@ namespace YACCP::Executor {
             while (!camDatas[fileConfig.recordingConfig.masterWorker].runtimeData.isRunning.load()) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 if (stopSource.stop_requested()) {
+                    buffer.disable();
                     rethrowIfAny(camDatas, threads);
                     return getWorstStopCode(camDatas);
                 }
@@ -255,8 +259,8 @@ namespace YACCP::Executor {
             VideoViewer videoViewer{
                 stopSource,
                 fileConfig.viewingConfig.viewsHorizontal,
-                mode->width - 100,
-                mode->height - 100,
+                mode->width - GlobalVariables::windowMargins,
+                mode->height - GlobalVariables::windowMargins,
                 camDatas,
                 charucoDetector,
                 valCornersQ,

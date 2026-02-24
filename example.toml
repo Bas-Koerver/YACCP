@@ -109,7 +109,7 @@ placement =
 #exposure_auto =
 #auto_exposure_lower_limit =
 #auto_exposure_upper_limit =
-#gain_auto
+#gain_auto =
 #auto_gain_lower_limit =
 #auto_gain_upper_limit =
 #auto_target_brightness =

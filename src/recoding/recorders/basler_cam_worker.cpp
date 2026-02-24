@@ -3,8 +3,9 @@
 
 #include "../job_data.hpp"
 
-#include <opencv2/imgproc.hpp>
+#include "../../global_variables/config_defaults.hpp"
 
+#include <opencv2/imgproc.hpp>
 
 namespace {
     class FrameHandler : public Pylon::CImageEventHandler {
@@ -58,7 +59,7 @@ namespace {
 }
 
 namespace YACCP {
-    void BaslerCamWorker::setPixelFormat(GenApi::INodeMap& nodeMap) {
+    void BaslerCamWorker::setPixelFormat(GenApi::INodeMap& nodeMap) const {
         // Configure pixel format and exposure time (FPS).
         if (configBackend_.pixelFormat.has_value()) {
             Pylon::CEnumParameter(nodeMap, "PixelFormat").SetValue(configBackend_.pixelFormat.value().data());
@@ -68,11 +69,13 @@ namespace YACCP {
     }
 
 
-    void BaslerCamWorker::setExposureControl(GenApi::INodeMap& nodeMap) {
+    void BaslerCamWorker::setExposureControl(GenApi::INodeMap& nodeMap) const {
         if (configBackend_.exposureTime.has_value()) {
             Pylon::CFloatParameter(nodeMap, "ExposureTime").SetValue(configBackend_.exposureTime.value());
         } else {
-            configBackend_.exposureTime = Pylon::CFloatParameter(nodeMap, "ExposureTime").GetValue();
+            // TODO: Maybe change this.
+            Pylon::CFloatParameter(nodeMap, "ExposureTime").SetValue(GlobalVariables::exposureTime);
+            configBackend_.exposureTime = GlobalVariables::exposureTime;
         }
 
         if (configBackend_.exposureAuto.has_value()) {
@@ -99,7 +102,7 @@ namespace YACCP {
     }
 
 
-    void BaslerCamWorker::setGainControl(GenApi::INodeMap& nodeMap) {
+    void BaslerCamWorker::setGainControl(GenApi::INodeMap& nodeMap) const {
         // TODO: add GainSelector
         if (configBackend_.gainAuto.has_value()) {
             Pylon::CEnumParameter(nodeMap, "GainAuto").SetValue(configBackend_.gainAuto.value().data());
@@ -121,7 +124,7 @@ namespace YACCP {
     }
 
 
-    void BaslerCamWorker::setAutoFunctionControl(GenApi::INodeMap& nodeMap) {
+    void BaslerCamWorker::setAutoFunctionControl(GenApi::INodeMap& nodeMap) const {
         // This controls how bright the automatic control will aim for.
         if (configBackend_.autoTargetBrightness.has_value()) {
             Pylon::CFloatParameter(nodeMap, "AutoTargetBrightness").SetValue(
@@ -139,7 +142,7 @@ namespace YACCP {
     }
 
 
-    void BaslerCamWorker::setDigitalIo(GenApi::INodeMap& nodeMap) {
+    void BaslerCamWorker::setDigitalIo(GenApi::INodeMap& nodeMap) const {
         Pylon::CEnumParameter lineSelector(nodeMap, "LineSelector");
 
         GenApi::StringList_t lines;
@@ -253,9 +256,8 @@ namespace YACCP {
 
             (void)TlFactory.EnumerateDevices(lstDevices);
             if (lstDevices.empty()) {
-                std::cerr << "No Basler cameras found.\n";
-                // Pylon::PylonTerminate();
                 camData_.runtimeData.exitCode = 1;
+                camData_.runtimeData.e = std::make_exception_ptr(std::runtime_error("No Basler cameras found."));
                 stopSource_.request_stop();
                 return;
             }
@@ -326,16 +328,59 @@ namespace YACCP {
             cam.StartGrabbing(Pylon::GrabStrategy_LatestImageOnly, Pylon::GrabLoop_ProvidedByInstantCamera);
 
             camData_.runtimeData.isRunning.store(cam.IsGrabbing());
-
-            if (camData_.info.isMaster) {
-                requestedFrame_ = 1 + recordingConfig_.fps * recordingConfig_.detectionInterval;
-                for (auto& [info, runtimeData] : camDatas_) {
-                    if (info.isMaster) {
-                        continue;
+            if (!camData_.runtimeData.datasetMode) {
+                if (camData_.info.isMaster) {
+                    requestedFrame_ = 1 + recordingConfig_.fps * recordingConfig_.detectionInterval;
+                    for (auto& [info, runtimeData] : camDatas_) {
+                        if (info.isMaster) {
+                            continue;
+                        }
+                        (void)runtimeData.frameRequestQ.enqueue(requestedFrame_);
                     }
-                    (void)runtimeData.frameRequestQ.enqueue(requestedFrame_);
+
+                    while (cam.IsGrabbing() && !stopToken_.stop_requested()) {
+                        cv::Mat localFrame;
+                        int localFrameIndex;
+                        {
+                            std::unique_lock<std::mutex> lock{frameMutex};
+                            if (frame.empty()) {
+                                continue;
+                            }
+                            localFrame = frame.clone();
+                            localFrameIndex = frameIndex;
+                        }
+                        // Frame used for visualisation
+                        {
+                            std::unique_lock<std::mutex> lock{camData_.runtimeData.m};
+                            camData_.runtimeData.frame = localFrame.clone();
+                        }
+
+                        if (localFrameIndex >= requestedFrame_) {
+                            VerifyTask frameData;
+                            frameData.id = requestedFrame_;
+                            frameData.frame = localFrame.clone();
+                            (void)camData_.runtimeData.frameVerifyQ.enqueue(frameData);
+
+                            requestedFrame_ = localFrameIndex + (
+                                                  recordingConfig_.fps * recordingConfig_.detectionInterval);
+
+                            for (auto& [info, runtimeData] : camDatas_) {
+                                if (info.isMaster) {
+                                    continue;
+                                }
+                                (void)runtimeData.frameRequestQ.enqueue(requestedFrame_);
+                            }
+                        }
+                    }
+                } else {
+                    // TODO: Add slave mode.
+                    throw std::logic_error("Function not yet implemented");
                 }
 
+                cam.StopGrabbing();
+                cam.Close();
+                (void)cam.DeregisterImageEventHandler(&frameHandler);
+            } else {
                 while (cam.IsGrabbing() && !stopToken_.stop_requested()) {
                     cv::Mat localFrame;
                     int localFrameIndex;
@@ -353,30 +398,8 @@ namespace YACCP {
                         camData_.runtimeData.frame = localFrame.clone();
                     }
 
-                    if (localFrameIndex >= requestedFrame_) {
-                        VerifyTask frameData;
-                        frameData.id = requestedFrame_;
-                        frameData.frame = localFrame.clone();
-                        (void)camData_.runtimeData.frameVerifyQ.enqueue(frameData);
-
-                        requestedFrame_ = localFrameIndex + (recordingConfig_.fps * recordingConfig_.detectionInterval);
-
-                        for (auto& [info, runtimeData] : camDatas_) {
-                            if (info.isMaster) {
-                                continue;
-                            }
-                            (void)runtimeData.frameRequestQ.enqueue(requestedFrame_);
-                        }
-                    }
                 }
-            } else {
-                // TODO: Add slave mode.
-                throw std::logic_error("Function not yet implemented");
             }
-
-            cam.StopGrabbing();
-            cam.Close();
-            (void)cam.DeregisterImageEventHandler(&frameHandler);
         } else {
             stopSource_.request_stop();
         }
@@ -388,7 +411,7 @@ namespace YACCP {
     }
 
 
-    std::pair<int, int> BaslerCamWorker::getSetNodeMapParameters(GenApi::INodeMap& nodeMap) {
+    std::pair<int, int> BaslerCamWorker::getSetNodeMapParameters(GenApi::INodeMap& nodeMap) const {
         setPixelFormat(nodeMap);
         setExposureControl(nodeMap);
         setGainControl(nodeMap);

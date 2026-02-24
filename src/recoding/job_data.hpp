@@ -158,6 +158,7 @@ namespace YACCP {
             // Thread information
             std::atomic<bool> isOpen{false};
             std::atomic<bool> isRunning{false};
+            bool datasetMode{false};
             int exitCode;
             cv::Mat frame;
             std::mutex m;
