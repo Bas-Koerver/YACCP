@@ -1,13 +1,8 @@
 #ifndef YACCP_SRC_CONFIG_BOARD_HPP
 #define YACCP_SRC_CONFIG_BOARD_HPP
-#include <optional>
-
 #include <boost/algorithm/string/case_conv.hpp>
-
 #include <nlohmann/json.hpp>
-
 #include <opencv2/core/types.hpp>
-
 #include <toml++/toml.hpp>
 
 namespace YACCP::Config {

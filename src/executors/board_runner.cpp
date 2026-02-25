@@ -1,9 +1,7 @@
 #include "board_runner.hpp"
 
 #include "../utility.hpp"
-
 #include "../tools/create_board.hpp"
-
 #include "../config/orchestrator.hpp"
 
 

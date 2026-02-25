@@ -93,7 +93,7 @@ namespace YACCP::Utility {
 
     [[nodiscard]] nlohmann::json loadJobDataFromFile(const std::filesystem::path& path);
 
-    [[nodiscard]] Config::FileConfig parseJsonToFileConfig(nlohmann::json& j);
+    [[nodiscard]] Config::FileConfig parseJsonToFileConfig(nlohmann::json & j);
 
     void saveJobDataToFile(const std::filesystem::path& jobPath,
                            Config::FileConfig& fileConfig,

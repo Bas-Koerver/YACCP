@@ -5,6 +5,9 @@
 #include "recording.hpp"
 #include "validation.hpp"
 
+#include <filesystem>
+#include <CLI/App.hpp>
+
 
 namespace YACCP::CLI {
     struct AppCmdConfig {

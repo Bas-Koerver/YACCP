@@ -5,6 +5,11 @@
 #include "recording.hpp"
 #include "viewing.hpp"
 
+#include <stdexcept>
+#include <string_view>
+#include <nlohmann/json.hpp>
+#include <toml++/toml.hpp>
+
 namespace YACCP::Config {
     template <typename T>
     [[nodiscard]] T requireVariable(const toml::table& tbl, std::string_view key, std::string_view keyPath = {}) {

@@ -7,14 +7,12 @@
 #include <vector>
 
 #include <boost/algorithm/string/case_conv.hpp>
+#include <nlohmann/json.hpp>
+#include <toml++/toml.hpp>
 
 #if YACCP_HAS_METAVISION
 #include <metavision/hal/facilities/i_event_trail_filter_module.h>
 #endif
-
-#include <nlohmann/json.hpp>
-
-#include <toml++/toml.hpp>
 
 namespace YACCP::Config {
 #if YACCP_HAS_METAVISION

@@ -1,7 +1,6 @@
 #include "recording.hpp"
 
 #include "orchestrator.hpp"
-
 #include "../global_variables/config_defaults.hpp"
 
 namespace {

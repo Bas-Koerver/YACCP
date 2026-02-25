@@ -2,8 +2,6 @@
 
 #include "../global_variables/program_defaults.hpp"
 
-#include "../recoding/recorders/camera_worker.hpp"
-
 namespace YACCP::Config {
     void loadConfig(FileConfig& config, const std::filesystem::path& path, const bool boardCreation) {
         // Load TOML configuration file.

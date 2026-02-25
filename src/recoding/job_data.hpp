@@ -17,6 +17,7 @@ namespace YACCP {
         cv::Mat frame;
     };
 
+
     static nlohmann::json matTo2dArray(const cv::Mat& m) {
         CV_Assert(m.type() == CV_64F);
 

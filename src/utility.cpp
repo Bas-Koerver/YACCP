@@ -2,11 +2,12 @@
 
 #include "global_variables/program_defaults.hpp"
 
-#include <filesystem>
-#include <fstream>
 #include <chrono>
+#include <filesystem>
 #include <format>
+#include <fstream>
 
+#include <nlohmann/json.hpp>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/objdetect/aruco_detector.hpp>
 

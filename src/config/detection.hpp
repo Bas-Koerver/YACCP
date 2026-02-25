@@ -1,9 +1,7 @@
 #ifndef YACCP_SRC_CONFIG_DETECTION_HPP
 #define YACCP_SRC_CONFIG_DETECTION_HPP
 #include <nlohmann/json.hpp>
-
 #include <opencv2/objdetect/charuco_detector.hpp>
-
 #include <toml++/toml.hpp>
 
 namespace cv::aruco {

@@ -49,7 +49,7 @@ namespace YACCP {
                            !camDatas_[i].runtimeData.frameVerifyQ.wait_dequeue_timed(
                                verifyTasks[i],
                                std::chrono::milliseconds(100)
-                               ));
+                           ));
                 }
 
                 if (stopToken_.stop_requested()) {

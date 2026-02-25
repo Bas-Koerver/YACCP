@@ -397,7 +397,6 @@ namespace YACCP {
                         std::unique_lock<std::mutex> lock{camData_.runtimeData.m};
                         camData_.runtimeData.frame = localFrame.clone();
                     }
-
                 }
             }
         } else {
