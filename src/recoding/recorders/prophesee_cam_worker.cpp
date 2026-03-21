@@ -311,7 +311,6 @@ namespace YACCP {
                         // If a frame was requested and the current frame index matches or
                         // is larger than the requested frame, generate and enqueue it.
                         if (masterCamFrameIndex >= requestedFrame && requestedFrame > 0) {
-                            std::cout << ev->t << "\n";
                             VerifyTask task;
                             task.id = requestedFrame;
                             onDemandFrameGenerator.generate(ev->t, task.frame);

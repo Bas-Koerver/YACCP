@@ -107,7 +107,9 @@ namespace YACCP::Calibration {
                                            static_cast<float>(cornerAmount) * fileConfig.detectionConfig.cornerMin))
                 };
 
-                if (!results.boardFound) continue;
+                if (!results.boardFound) {
+                    continue;
+                }
 
                 board.matchImagePoints(results.charucoCorners,
                                        results.charucoIds,

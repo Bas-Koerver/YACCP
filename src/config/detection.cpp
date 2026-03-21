@@ -12,6 +12,11 @@ namespace YACCP::Config {
             GlobalVariables::charucoDictionary);
         config.cornerMin = (*detectionTbl)["minimum_corner_fraction"].value_or(GlobalVariables::minCornerFraction);
 
+        if (config.cornerMin < GlobalVariables::minCornerFraction) {
+            throw std::runtime_error(
+                "The minimum corner fraction is too low, in a single board image more than one column or row needs to be found");
+        }
+
         // Load custom charuco parameters if set, otherwise load defaults.
         if (const auto* charuco{(*detectionTbl)["charuco_parameters"].as_table()}) {
             config.charucoParameters.tryRefineMarkers = (*charuco)["refine"].value_or(

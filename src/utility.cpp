@@ -34,7 +34,7 @@ namespace YACCP::Utility {
                                     charucoResults.markerCorners,
                                     charucoResults.markerIds);
 
-        if (charucoResults.charucoCorners.size() > cornerMin) {
+        if (charucoResults.charucoCorners.size() >= cornerMin) {
             charucoResults.boardFound = true;
         }
         return charucoResults;

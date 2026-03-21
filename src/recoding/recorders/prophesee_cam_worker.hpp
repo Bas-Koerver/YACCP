@@ -31,7 +31,7 @@ namespace YACCP {
 
         void configureEventTrailFilter(Metavision::Device& device) const;
 
-        void configureTimingInterfaces(Metavision::Device& device);
+        static void configureTimingInterfaces(Metavision::Device& device);
 
         void configureFacilities(Metavision::Camera& camera);
     };

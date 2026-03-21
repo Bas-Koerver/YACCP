@@ -3,6 +3,7 @@
 #include "orchestrator.hpp"
 #include "../global_variables/config_defaults.hpp"
 
+
 namespace YACCP::Config {
     void parseBoardConfig(const toml::table& tbl, BoardConfig& config, const bool boardCreation) {
         // [board] configuration variables.
@@ -12,6 +13,14 @@ namespace YACCP::Config {
         config.boardType = stringToBoardType(requireVariable<std::string>(*boardTbl, "type", "board"));
         config.boardSize.width = (*boardTbl)["squares_x"].value_or(GlobalVariables::boardWidth);
         config.boardSize.height = (*boardTbl)["squares_y"].value_or(GlobalVariables::boardHeight);
+
+        // The minimum amount of detected corners should be at least more than one row or column.
+        const auto charucoCols{config.boardSize.width - 1};
+        const auto charucoRows{config.boardSize.height - 1};
+
+        GlobalVariables::minCornerFraction = std::ceil(
+                                                 static_cast<float>(std::max(charucoCols, charucoRows) + 1) /
+                                                 static_cast<float>(charucoCols * charucoRows) * 1e3F) / 1e3F;
 
         switch (config.boardType) {
         case BoardTypes::charuco:

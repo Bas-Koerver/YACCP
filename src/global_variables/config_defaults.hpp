@@ -13,7 +13,7 @@ namespace YACCP::GlobalVariables {
 
     // Default [detection] variables
     inline constexpr auto charucoDictionary{8};
-    inline constexpr auto minCornerFraction{.125F};
+    inline float minCornerFraction{};
 
     // Default [recording] variables
     inline constexpr auto recordingFps{30};
