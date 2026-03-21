@@ -4,8 +4,23 @@
 
 #include <pylon/PylonIncludes.h>
 
+#include <opencv2/imgproc.hpp>
+
+namespace {
+    constexpr uint32_t PIXEL_TYPE_MASK = 0xFF000000;
+}
+
 
 namespace YACCP {
+    inline std::unordered_map<Pylon::EPixelType, cv::ColorConversionCodes> cvColourConversionCodeMap = {
+        {Pylon::PixelType_Mono8, cv::COLOR_GRAY2BGR},
+        {Pylon::PixelType_BayerGR8, cv::COLOR_BayerGRBG2BGR},
+        {Pylon::PixelType_BayerRG8, cv::COLOR_BayerRGGB2BGR},
+        {Pylon::PixelType_BayerGB8, cv::COLOR_BayerGBRG2BGR},
+        {Pylon::PixelType_BayerBG8, cv::COLOR_BayerBGGR2BGR},
+        {Pylon::PixelType_RGB8packed, cv::COLOR_RGB2BGR},
+    };
+
     class BaslerCamWorker final : public CameraWorker {
     public:
         /**

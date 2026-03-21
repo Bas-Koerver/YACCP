@@ -74,7 +74,7 @@ namespace YACCP {
             }
 
             int mode = camDetectMode.load(std::memory_order_relaxed);
-            // int mode = camDetectMode;
+
             if (mode == -1 || mode == camRef) {
                 cv::Mat grayFrame;
                 cv::cvtColor(localFrame, grayFrame, cv::COLOR_BGR2GRAY);

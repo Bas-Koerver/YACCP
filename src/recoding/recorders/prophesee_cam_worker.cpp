@@ -153,7 +153,7 @@ namespace YACCP {
     }
 
 
-    void PropheseeCamWorker::configureFacilities(Metavision::Camera& camera) {
+    void PropheseeCamWorker::configureFacilities(Metavision::Camera& camera) const {
         Metavision::Device& device = camera.get_device();
 
         configureBiases(device);

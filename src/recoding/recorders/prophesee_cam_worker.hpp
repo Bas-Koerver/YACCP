@@ -33,7 +33,7 @@ namespace YACCP {
 
         static void configureTimingInterfaces(Metavision::Device& device);
 
-        void configureFacilities(Metavision::Camera& camera);
+        void configureFacilities(Metavision::Camera& camera) const;
     };
 } // YACCP
 #endif //YACCP_SRC_RECORDING_RECORDERS_PROPHESEE_CAM_WORKER_HPP

@@ -1,17 +1,18 @@
 #define NOMINMAX
 #include "basler_cam_worker.hpp"
 
+#include <CLI/Error.hpp>
+#include <metavision/sdk/stream/camera_error_code.h>
+
 #include "../job_data.hpp"
 
 #include "../../global_variables/config_defaults.hpp"
-
-#include <opencv2/imgproc.hpp>
 
 namespace {
     class FrameHandler : public Pylon::CImageEventHandler {
     public:
         FrameHandler(std::mutex& m, cv::Mat& f, int& index, GenApi::INodeMap& np) :
-            frame_mutex_{m},
+            frameMutex_{m},
             frame_{f},
             id_{index},
             nodeMap_{np} {
@@ -23,30 +24,84 @@ namespace {
                 return;
             }
 
-            const int width{static_cast<int>(ptrGrabResult->GetWidth())};
-            const int height{static_cast<int>(ptrGrabResult->GetHeight())};
-            cv::Mat tempFrameBGR;
+            const auto width{static_cast<int>(ptrGrabResult->GetWidth())};
+            const auto height{static_cast<int>(ptrGrabResult->GetHeight())};
+            const Pylon::EPixelType pixelType{ptrGrabResult->GetPixelType()};
             int tempIndex{};
 
-            //BayerRG8 (RGGB)
-            cv::Mat tempFrame(height, width, CV_8UC1, ptrGrabResult->GetBuffer());
-            cv::cvtColor(tempFrame, tempFrameBGR, cv::COLOR_BayerRGGB2BGR);
+            // When the pixel format already is in BGR8, then conversion is not needed.
+            if (pixelType == Pylon::PixelType_BGR8packed) {
+                cv::Mat tempFrameBGR(height, width, CV_8UC3, ptrGrabResult->GetBuffer());
 
-            tempIndex = Pylon::CIntegerParameter(nodeMap_, "CounterValue").GetValue();
+                tempIndex = Pylon::CIntegerParameter(nodeMap_, "CounterValue").GetValue();
 
-            {
-                std::lock_guard<std::mutex> lock{frame_mutex_};
-                tempFrameBGR.copyTo(frame_);
-                id_ = tempIndex;
+                {
+                    std::lock_guard<std::mutex> lock{frameMutex_};
+                    tempFrameBGR.copyTo(frame_);
+                    id_ = tempIndex;
+                }
+            } else {
+                cv::Mat tempFrameBGR;
+                cv::ColorConversionCodes cvColour;
+                try {
+                    cvColour = YACCP::cvColourConversionCodeMap.at(pixelType);
+                }
+                catch (const std::out_of_range) {
+                    std::lock_guard<std::mutex> lock{errorMutex_};
+                    lastError_ = "Current pixel format is not implemented (yet).";
+                    errorFlag_.store(true);
+                }
+
+                int matType{};
+                const uint32_t colourType{PIXEL_TYPE_MASK & pixelType};
+                if (colourType == PIXEL_MONO) {
+                    matType = CV_8UC1;
+                } else if (colourType == PIXEL_COLOR) {
+                    matType = CV_8UC3;
+                } else if (colourType == PIXEL_CUSTOMTYPE) {
+                    std::lock_guard<std::mutex> lock{errorMutex_};
+                    lastError_ = "I don't know how you got here, but that's pretty impressive";
+                    errorFlag_.store(true);
+
+                } else {
+                    std::lock_guard<std::mutex> lock{errorMutex_};
+                    lastError_ = "Unhandled error.";
+                    errorFlag_.store(true);
+                }
+
+                cv::Mat tempFrame(height, width, matType, ptrGrabResult->GetBuffer());
+                cv::cvtColor(tempFrame, tempFrameBGR, cvColour);
+
+                tempIndex = Pylon::CIntegerParameter(nodeMap_, "CounterValue").GetValue();
+
+                {
+                    std::lock_guard<std::mutex> lock{frameMutex_};
+                    tempFrameBGR.copyTo(frame_);
+                    id_ = tempIndex;
+                }
             }
         }
 
 
+        bool hasError() const {
+            return errorFlag_.load();
+        }
+
+
+        std::string getLastError() {
+            std::lock_guard<std::mutex> lock{errorMutex_};
+            return lastError_;
+        }
+
+
     private:
-        std::mutex& frame_mutex_;
+        std::mutex& frameMutex_;
         cv::Mat& frame_;
         int& id_;
         GenApi::INodeMap& nodeMap_;
+        std::atomic<bool> errorFlag_{false};
+        std::mutex errorMutex_;
+        std::string lastError_;
     };
 
 
@@ -339,6 +394,16 @@ namespace YACCP {
                     }
 
                     while (cam.IsGrabbing() && !stopToken_.stop_requested()) {
+                        // Check for errors
+                        if (frameHandler.hasError()) {
+                            cam.StopGrabbing();
+                            camData_.runtimeData.exitCode = 1;
+                            camData_.runtimeData.e = std::make_exception_ptr(
+                                std::runtime_error(frameHandler.getLastError()));
+                            (void)stopSource_.request_stop();
+                            return;
+                        }
+
                         cv::Mat localFrame;
                         int localFrameIndex;
                         {
