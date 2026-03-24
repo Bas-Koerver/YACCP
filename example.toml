@@ -104,7 +104,9 @@ placement =
 
 # Optional: required if you have multiple cameras of the same type.
 #cam_uuid =
+# For pixel format syntax: https://docs.baslerweb.com/pixel-format
 #pixel_format = "BayerRG8"
+
 #exposure_time =
 #exposure_auto =
 #auto_exposure_lower_limit =
